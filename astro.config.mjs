@@ -2,23 +2,24 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// https://astro.build/config
 export default defineConfig({
 	integrations: [
 		starlight({
-			title: 'My Docs',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+			title: 'Acervo',
+			locales: {
+				root: { label: 'Português', lang: 'pt-BR' },
+				en: { label: 'English', lang: 'en' },
+			},
+			lastUpdated: true,
 			sidebar: [
 				{
-					label: 'Guides',
+					label: 'Mobile',
 					items: [
-						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
+						{
+							label: 'React Native',
+							items: [{ autogenerate: { directory: 'mobile/react-native' } }],
+						},
 					],
-				},
-				{
-					label: 'Reference',
-					items: [{ autogenerate: { directory: 'reference' } }],
 				},
 			],
 		}),
