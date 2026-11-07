@@ -51,7 +51,7 @@ Os campos do frontmatter estão validados em `src/content.config.ts`.
 - **Nunca escreva de memória sobre API de biblioteca.** Consulte a doc oficial da versão em uso (para Expo: `https://docs.expo.dev/versions/v<major>.0.0/` e `https://docs.expo.dev/llms.txt`) e coloque o link em `fontes`.
 - **Sem comentários no código**: nem nos exemplos das notas, nem nos arquivos do projeto. A explicação vai no texto, antes ou depois do bloco. Se o código original de um projeto tiver comentários, remova ao copiar.
 - Os exemplos devem ser código real e completo, com imports. Use `title="caminho/do/arquivo"` nos blocos e `ins={}`/`del={}` para mostrar diffs.
-- Quando a nota vier de um projeto real (ex.: um curso), use o código do projeto como exemplo.
+- **Notas são genéricas**: documente a implementação padrão da ferramenta, com exemplos neutros (ex.: `home`, `settings`). Mesmo quando a nota nasce de um projeto real (ex.: um curso), não use nomes, telas, estilos ou decisões específicas dele.
 - Use asides do Starlight para avisos: `:::note`, `:::tip`, `:::caution`, `:::danger`.
 - Escreva de forma direta, explicando o *porquê* de cada passo, não só o *como*.
 
