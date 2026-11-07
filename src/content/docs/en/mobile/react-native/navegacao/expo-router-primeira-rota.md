@@ -8,7 +8,7 @@ fontes:
   - https://docs.expo.dev/router/introduction/
   - https://docs.expo.dev/router/installation/
 sidebar:
-  order: 3
+  order: 1
 ---
 
 ## What it is

@@ -11,13 +11,15 @@ Acervo pessoal de estudos em Astro Starlight. Todo o conteúdo está em portugu�
 
 ## Organização
 
-- Pastas = categorias: `src/content/docs/<área>/<tecnologia>/<nota>.md`
+- Pastas = categorias: `src/content/docs/<área>/<tecnologia>/<assunto>/<nota>.md`
   - Áreas atuais: `mobile/`, `web/`
-  - Ex.: `mobile/react-native/configurando-eslint.md`, `web/nextjs/proxy.md`
-- Nome do arquivo em kebab-case, sem acentos. Ele vira a URL.
-- Um assunto por nota. Se o assunto crescer, vira uma subpasta (ex.: `expo-router/` com várias notas).
-- Ordem na sidebar: `sidebar.order` no frontmatter.
-- **Nova tecnologia ou área**: além de criar a pasta, adicione o grupo em `sidebar` no `astro.config.mjs` no formato `{ label: '<Tecnologia>', items: [{ autogenerate: { directory: '<área>/<tecnologia>' } }] }` (o `label` direto no `autogenerate` foi removido no Starlight 0.39). Não registre pasta vazia, porque o build reclama.
+  - Assuntos atuais em `mobile/react-native/`: `configuracao/` (ESLint, fontes…) e `navegacao/` (Expo Router, tabs, stack, drawer…)
+  - Ex.: `mobile/react-native/configuracao/configurando-eslint.md`, `mobile/react-native/navegacao/expo-router-custom-tabs.md`
+- Agrupe por **assunto**, não por lib: a nota de axios vai em `rede/`, a de otimização de imagem em `imagens/` etc.
+- Nome do arquivo e da pasta em kebab-case, sem acentos. Eles viram a URL.
+- Um assunto por nota.
+- Ordem na sidebar: `sidebar.order` no frontmatter, contado dentro de cada subgrupo.
+- **Novo assunto, tecnologia ou área**: além de criar a pasta (nos dois idiomas), adicione o grupo em `sidebar` no `astro.config.mjs` com label em pt-BR e tradução, no formato `{ label: 'Navegação', translations: { en: 'Navigation' }, items: [{ autogenerate: { directory: 'mobile/react-native/navegacao' } }] }`. Não use só o `autogenerate` da pasta-mãe, porque ele usaria o nome da pasta (sem acento) como título. O `label` direto no `autogenerate` foi removido no Starlight 0.39. Não registre pasta vazia, porque o build reclama.
 
 ## Template obrigatório de nota
 

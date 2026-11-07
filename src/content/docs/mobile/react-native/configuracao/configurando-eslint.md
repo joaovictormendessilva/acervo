@@ -7,7 +7,7 @@ atualizado_em: 2026-11-04
 fontes:
   - https://docs.expo.dev/guides/using-eslint/
 sidebar:
-  order: 2
+  order: 1
 ---
 
 ## O que é

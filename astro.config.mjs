@@ -17,7 +17,18 @@ export default defineConfig({
 					items: [
 						{
 							label: 'React Native',
-							items: [{ autogenerate: { directory: 'mobile/react-native' } }],
+							items: [
+								{
+									label: 'Configuração',
+									translations: { en: 'Setup' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/configuracao' } }],
+								},
+								{
+									label: 'Navegação',
+									translations: { en: 'Navigation' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/navegacao' } }],
+								},
+							],
 						},
 					],
 				},

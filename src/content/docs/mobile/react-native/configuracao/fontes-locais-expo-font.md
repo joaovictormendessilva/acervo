@@ -8,7 +8,7 @@ fontes:
   - https://docs.expo.dev/versions/v58.0.0/sdk/font/
   - https://docs.expo.dev/develop/user-interface/fonts/
 sidebar:
-  order: 4
+  order: 2
 ---
 
 ## O que é
