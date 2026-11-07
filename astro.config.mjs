@@ -28,6 +28,11 @@ export default defineConfig({
 									translations: { en: 'Navigation' },
 									items: [{ autogenerate: { directory: 'mobile/react-native/navegacao' } }],
 								},
+								{
+									label: 'Estilização',
+									translations: { en: 'Styling' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/estilizacao' } }],
+								},
 							],
 						},
 					],
