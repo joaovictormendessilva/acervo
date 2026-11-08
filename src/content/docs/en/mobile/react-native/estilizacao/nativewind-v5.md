@@ -3,7 +3,7 @@ title: NativeWind v5 — setup
 description: Tailwind CSS v4 in React Native with NativeWind v5 and react-native-css.
 tecnologia: nativewind
 versao_testada: NativeWind 5.0.0-rc.1 · react-native-css 3.1.0-rc.1 · Tailwind CSS 4.1.12 · Expo SDK 58
-atualizado_em: 2026-11-07
+atualizado_em: 2026-11-08
 fontes:
   - https://www.nativewind.dev/v5/getting-started/installation
   - https://docs.expo.dev/guides/tailwind/
@@ -167,6 +167,73 @@ export default function Index() {
 
 If the text shows up centered, blue and bold on a white background, it's working. Run `npx expo start --clear` the first time to clear Metro's cache.
 
+## Variations
+
+### Customizing the theme
+
+In Tailwind v4, the theme lives in an `@theme` block inside `global.css`. Each variable creates classes according to its prefix (its *namespace*):
+
+```css title="src/global.css"
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+@import "nativewind/theme";
+
+@theme {
+  --font-sans-bold: "Inter-Bold";
+  --font-sans-regular: "Inter-Regular";
+
+  --text-base: 15px;
+
+  --color-background: #0a0a0a;
+  --color-text: #fafafa;
+  --color-primary: #3b82f6;
+}
+```
+
+| Variable | Generated class |
+| --- | --- |
+| `--color-background` | `bg-background`, `text-background`, `border-background`… |
+| `--text-base` | `text-base` (overrides the default size) |
+| `--font-sans-bold` | `font-sans-bold` (`font-family`) |
+
+- The font name in `@theme` must be **exactly** the name registered in `expo-font`'s `useFonts`. If it doesn't match, the text silently falls back to the system font.
+- Fonts use the `--font-*` prefix. Avoid `--font-bold` and similar: `font-bold` already exists as a weight (`font-weight`), and the names get mixed up.
+- To use the same color outside `className` (for example, in an icon's `color` prop), also export the values in a TypeScript object and keep both in sync.
+
+### Locked dark theme
+
+To make the whole app dark, including the native window background that shows behind screens:
+
+```json title="app.json"
+{
+  "expo": {
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0a0a0a"
+  }
+}
+```
+
+```tsx title="src/app/_layout.tsx"
+import "@/global.css";
+
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { View } from "react-native";
+
+export default function RootLayout() {
+  return (
+    <View className="flex-1 bg-background">
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }} />
+    </View>
+  );
+}
+```
+
+The `Stack` paints each screen with its own background. `contentStyle: { backgroundColor: "transparent" }` lets the root `View`'s `bg-background` show through, so the background color is defined in a single place.
+
 ## Common pitfalls
 
 - **Mismatched versions** of `nativewind` and `react-native-css`: install both with `--save-exact` and with the pair the peer dependency asks for (`npm view nativewind@<version> peerDependencies`).
@@ -175,6 +242,31 @@ If the text shows up centered, blue and bold on a white background, it's working
 - **Stale Metro cache** after installing: classes don't apply until you run with `--clear`.
 - **Type file name**: don't use `nativewind.d.ts` or a name that matches another file, folder or `node_modules` package, because TypeScript ignores the reference.
 - **`.css` import error in TypeScript**: add `declare module "*.css";` to a declaration file included in `tsconfig`.
+- **`AssetRegistry` undefined in `expo-asset` (react-native-css `3.1.0-rc.1` + RN 0.87 or newer)**: `react-native-css` redirects every `import ... from "react-native"` to its own module, which doesn't re-export `AssetRegistry`. `expo-asset` uses that export, so `expo-font` fonts, `@expo/vector-icons` and any asset break. It's already fixed in the `react-native-css` repository. Until the new version ships, let `expo-asset` resolve the original `react-native`:
+
+  ```js title="metro.config.js"
+  const path = require("node:path");
+  const { getDefaultConfig } = require("expo/metro-config");
+  const { withNativewind } = require("nativewind/metro");
+
+  /** @type {import('expo/metro-config').MetroConfig} */
+  const config = withNativewind(getDefaultConfig(__dirname));
+
+  const nativewindResolveRequest = config.resolver.resolveRequest;
+  config.resolver.resolveRequest = (context, moduleName, platform) => {
+    if (
+      moduleName === "react-native" &&
+      context.originModulePath.includes(`${path.sep}expo-asset${path.sep}`)
+    ) {
+      return context.resolveRequest(context, moduleName, platform);
+    }
+    return nativewindResolveRequest(context, moduleName, platform);
+  };
+
+  module.exports = config;
+  ```
+
+  `withNativewind` must run **first**, because it installs the `resolveRequest` we wrap. Remove the workaround once you upgrade `react-native-css`.
 
 ## What changed between versions
 
@@ -185,4 +277,4 @@ If the text shows up centered, blue and bold on a white background, it's working
   - `global.css` swaps `@tailwind base/components/utilities` for layered `@import`s plus `nativewind/theme`.
   - `withNativeWind(config, { input: './global.css' })` becomes `withNativewind(config)`, with no `input`.
   - Types move from `nativewind/types` to `react-native-css/types`.
-- **rc.0 → rc.1**: the docs still pin the `rc.0` pair. The `rc.1` pair worked on Expo SDK 58 with no config changes.
+- **rc.0 → rc.1**: the docs still pin the `rc.0` pair. The `rc.1` pair works on Expo SDK 58 with the same config, but needs the `AssetRegistry` workaround in Metro (see Common pitfalls).

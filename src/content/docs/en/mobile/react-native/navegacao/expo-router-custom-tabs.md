@@ -3,7 +3,7 @@ title: Expo Router — custom tabs
 description: Your own tab bar with Tabs, TabSlot, TabList and TabTrigger from expo-router/ui.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58 · React Native 0.88
-atualizado_em: 2026-11-06
+atualizado_em: 2026-11-08
 fontes:
   - https://docs.expo.dev/router/advanced/custom-tabs/
   - https://docs.expo.dev/router/basics/redirects/
@@ -99,7 +99,53 @@ const styles = StyleSheet.create({
 
 :::caution[Button type on RN 0.88]
 The docs type the button with `TabTriggerSlotProps`. In React Native 0.88, `View` became a function component, and that type's `ref` no longer matches `Pressable`'s, so `tsc` fails. Typing it as `ComponentProps<typeof Pressable>` plus `isFocused` fixes this and accepts the same props.
+
+To keep using the lib's type, replace just the `ref`:
+
+```ts
+import type { TabTriggerSlotProps } from 'expo-router/ui';
+import type { ComponentRef, Ref } from 'react';
+import type { Pressable } from 'react-native';
+
+type TabButtonProps = Omit<TabTriggerSlotProps, 'ref'> & {
+  ref?: Ref<ComponentRef<typeof Pressable>>;
+  label: string;
+};
+```
 :::
+
+### Button with an icon
+
+Since `TabButton` is your own component, you can pass any extra prop. With `@expo/vector-icons`, the icon name can be typed from the family's `glyphMap`:
+
+```tsx title="src/components/tab-button.tsx"
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import type { ComponentProps } from 'react';
+import { Pressable, Text } from 'react-native';
+
+type TabButtonProps = Omit<ComponentProps<typeof Pressable>, 'children'> & {
+  label: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
+  isFocused?: boolean;
+};
+
+export function TabButton({ label, icon, isFocused, ...props }: TabButtonProps) {
+  const color = isFocused ? '#3b82f6' : '#6b7280';
+
+  return (
+    <Pressable {...props} style={{ alignItems: 'center', gap: 4 }}>
+      <MaterialIcons name={icon} size={24} color={color} />
+      <Text style={{ color }}>{label}</Text>
+    </Pressable>
+  );
+}
+```
+
+```tsx
+<TabTrigger name="index" href="/" asChild>
+  <TabButton icon="home" label="Home" />
+</TabTrigger>
+```
 
 ### 4. Build the tabs layout
 

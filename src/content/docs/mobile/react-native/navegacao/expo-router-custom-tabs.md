@@ -3,7 +3,7 @@ title: Expo Router — custom tabs
 description: Barra de abas própria com Tabs, TabSlot, TabList e TabTrigger do expo-router/ui.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58 · React Native 0.88
-atualizado_em: 2026-11-06
+atualizado_em: 2026-11-08
 fontes:
   - https://docs.expo.dev/router/advanced/custom-tabs/
   - https://docs.expo.dev/router/basics/redirects/
@@ -99,7 +99,53 @@ const styles = StyleSheet.create({
 
 :::caution[Tipo do botão no RN 0.88]
 A doc usa `TabTriggerSlotProps` como tipo do botão. No React Native 0.88, o `View` virou componente de função, e o `ref` desse tipo deixa de bater com o do `Pressable`, então o `tsc` dá erro. Tipar com `ComponentProps<typeof Pressable>` mais `isFocused` resolve o problema e aceita as mesmas props.
+
+Para continuar usando o tipo da lib, troque só o `ref`:
+
+```ts
+import type { TabTriggerSlotProps } from 'expo-router/ui';
+import type { ComponentRef, Ref } from 'react';
+import type { Pressable } from 'react-native';
+
+type TabButtonProps = Omit<TabTriggerSlotProps, 'ref'> & {
+  ref?: Ref<ComponentRef<typeof Pressable>>;
+  label: string;
+};
+```
 :::
+
+### Botão com ícone
+
+Como o `TabButton` é um componente seu, você pode passar qualquer prop extra. Com o `@expo/vector-icons`, o nome do ícone pode ser tipado pelo `glyphMap` da família:
+
+```tsx title="src/components/tab-button.tsx"
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import type { ComponentProps } from 'react';
+import { Pressable, Text } from 'react-native';
+
+type TabButtonProps = Omit<ComponentProps<typeof Pressable>, 'children'> & {
+  label: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
+  isFocused?: boolean;
+};
+
+export function TabButton({ label, icon, isFocused, ...props }: TabButtonProps) {
+  const color = isFocused ? '#3b82f6' : '#6b7280';
+
+  return (
+    <Pressable {...props} style={{ alignItems: 'center', gap: 4 }}>
+      <MaterialIcons name={icon} size={24} color={color} />
+      <Text style={{ color }}>{label}</Text>
+    </Pressable>
+  );
+}
+```
+
+```tsx
+<TabTrigger name="index" href="/" asChild>
+  <TabButton icon="home" label="Home" />
+</TabTrigger>
+```
 
 ### 4. Montar o layout das abas
 
