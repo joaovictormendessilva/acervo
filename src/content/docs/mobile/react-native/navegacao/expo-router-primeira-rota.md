@@ -53,7 +53,7 @@ Depois disso, **apague `App.tsx` e `index.ts`**. Quem decide o que renderizar ag
 ```json title="app.json"
 {
   "expo": {
-    "scheme": "readerfortabnews",
+    "scheme": "myapp",
     "plugins": ["expo-router", "expo-status-bar"],
     "experiments": {
       "typedRoutes": true
@@ -62,7 +62,7 @@ Depois disso, **apague `App.tsx` e `index.ts`**. Quem decide o que renderizar ag
 }
 ```
 
-- `scheme`: o prefixo dos deep links (`readerfortabnews://...`).
+- `scheme`: o prefixo dos deep links (`myapp://...`).
 - `typedRoutes`: gera tipos para que `<Link href="...">` aponte erro em rota inexistente.
 
 ### 4. Alias `@/` no TypeScript (opcional, recomendado)

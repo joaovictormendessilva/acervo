@@ -53,7 +53,7 @@ After that, **delete `App.tsx` and `index.ts`**. The `src/app/` folder now decid
 ```json title="app.json"
 {
   "expo": {
-    "scheme": "readerfortabnews",
+    "scheme": "myapp",
     "plugins": ["expo-router", "expo-status-bar"],
     "experiments": {
       "typedRoutes": true
@@ -62,7 +62,7 @@ After that, **delete `App.tsx` and `index.ts`**. The `src/app/` folder now decid
 }
 ```
 
-- `scheme`: the deep link prefix (`readerfortabnews://...`).
+- `scheme`: the deep link prefix (`myapp://...`).
 - `typedRoutes`: generates types so `<Link href="...">` flags an error for a route that doesn't exist.
 
 ### 4. `@/` alias in TypeScript (optional, recommended)
