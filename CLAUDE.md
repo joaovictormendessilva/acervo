@@ -13,7 +13,8 @@ Acervo pessoal de estudos em Astro Starlight. Todo o conteúdo está em portugu�
 
 - Pastas = categorias: `src/content/docs/<área>/<tecnologia>/<assunto>/<nota>.md`
   - Áreas atuais: `mobile/`, `web/`
-  - Assuntos atuais em `mobile/react-native/`: `configuracao/` (ESLint, fontes…), `navegacao/` (Expo Router, tabs, stack, drawer…) e `estilizacao/` (NativeWind…)
+  - Assuntos atuais em `mobile/react-native/`: `arquitetura/` (estrutura de pastas e padrões de projeto), `configuracao/` (ESLint, fontes…), `navegacao/` (Expo Router, tabs, stack, drawer…) e `estilizacao/` (NativeWind…)
+- Além de libs e configurações, o acervo guarda os **padrões que o usuário segue em todos os projetos** (ex.: arquitetura de pastas, convenções de nome). Eles também são escritos de forma genérica.
   - Ex.: `mobile/react-native/configuracao/configurando-eslint.md`, `mobile/react-native/navegacao/expo-router-custom-tabs.md`
 - Agrupe por **assunto**, não por lib: a nota de axios vai em `rede/`, a de otimização de imagem em `imagens/` etc.
 - Nome do arquivo e da pasta em kebab-case, sem acentos. Eles viram a URL.

@@ -19,6 +19,11 @@ export default defineConfig({
 							label: 'React Native',
 							items: [
 								{
+									label: 'Arquitetura',
+									translations: { en: 'Architecture' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/arquitetura' } }],
+								},
+								{
 									label: 'Configuração',
 									translations: { en: 'Setup' },
 									items: [{ autogenerate: { directory: 'mobile/react-native/configuracao' } }],
