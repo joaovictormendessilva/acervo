@@ -38,6 +38,11 @@ export default defineConfig({
 									translations: { en: 'Styling' },
 									items: [{ autogenerate: { directory: 'mobile/react-native/estilizacao' } }],
 								},
+								{
+									label: 'Datas',
+									translations: { en: 'Dates' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/datas' } }],
+								},
 							],
 						},
 					],
