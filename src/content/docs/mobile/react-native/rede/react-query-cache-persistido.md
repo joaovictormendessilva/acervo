@@ -158,6 +158,8 @@ Troque o valor sempre que mudar o formato de algo que fica no cache.
 - **`gcTime` menor que o `maxAge`**: o cache é apagado da memória antes de ser útil, e a persistência praticamente não funciona.
 - **Achar que o `staleTime` busca sozinho quando vence**: ele só marca o dado como velho. A busca vem no próximo gatilho (montar a tela, voltar para o app, puxar para atualizar).
 - **Abas e o `gcTime`**: num navegador de abas, uma tela continua montada depois de visitada, então as queries dela ficam em uso o tempo todo e o `gcTime` não conta enquanto o app está aberto. É na reabertura do app que a persistência faz diferença.
+- **Achar que o `select` muda o que é salvo**: o `select` transforma o dado só na hora de entregar para a tela, e o cache continua guardando a resposta do `queryFn` sem mudança. Você pode mudar o `select` à vontade sem trocar o `buster`, e o `buster` só é necessário quando muda o formato do que o `queryFn` devolve.
+- **Mudar a `queryKey` de uma query**: o cache salvo com a chave antiga fica sem uso. Ele não quebra nada e é descartado sozinho quando passa o `gcTime`.
 - **Mudar o formato dos dados sem trocar o `buster`**: os usuários que atualizarem o app recebem o cache no formato antigo.
 - **Persistir dados sensíveis**: o AsyncStorage guarda texto puro.
 

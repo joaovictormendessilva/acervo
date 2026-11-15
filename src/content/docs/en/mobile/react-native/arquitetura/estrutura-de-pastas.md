@@ -3,7 +3,7 @@ title: Folder structure
 description: Folder organization pattern for Expo apps with Expo Router.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58
-atualizado_em: 2026-11-14
+atualizado_em: 2026-11-15
 fontes:
   - https://docs.expo.dev/router/basics/core-concepts/
 sidebar:
@@ -132,6 +132,22 @@ export default function RootLayout() {
 
 - **Files and folders in kebab-case**: `tab-button.tsx`, `dark-theme.ts`. This avoids problems with case-insensitive file systems (Windows and macOS), where renaming `TabButton.tsx` to `tabButton.tsx` isn't picked up by git.
 - **Components with named exports**: `export function TabButton()`. `export default` is only for screens in `src/app/`, because Expo Router requires it.
+- **`function` for components, `const` for everything else**: components and screens are declared with `function`, and everything else (hooks, services, adapters, helpers and handlers inside components) uses `const` with an arrow function. That way you can tell at a glance whether something renders. Since `const` isn't hoisted, it has to be declared before the code that uses it when the file loads. That's why the object grouping the functions goes at the end of the file.
+
+```ts title="src/features/products/product-adapter.ts"
+import { ProductResponse } from "./api/product-api-types";
+import { ProductSummary } from "./product-types";
+
+const toProductSummary = (response: ProductResponse): ProductSummary => ({
+  id: response.id,
+  name: response.name,
+  price: response.price_in_cents / 100,
+});
+
+export const productAdapter = {
+  toProductSummary,
+};
+```
 - **Constants with `as const`**: values stay literal and TypeScript can check them (e.g. routes with `satisfies Record<string, Href>`).
 - **Type names**: see [Type naming conventions](/en/mobile/react-native/arquitetura/convencoes-de-nomes-de-tipos/).
 

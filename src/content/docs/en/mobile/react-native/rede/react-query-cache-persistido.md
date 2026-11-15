@@ -158,6 +158,8 @@ Change the value whenever you change the shape of something that lives in the ca
 - **`gcTime` lower than `maxAge`**: the cache is deleted from memory before it's useful, and persistence barely works.
 - **Thinking `staleTime` fetches by itself when it runs out**: it only marks the data as stale. The fetch comes on the next trigger (screen mount, returning to the app, pull to refresh).
 - **Tabs and `gcTime`**: in a tab navigator, a screen stays mounted after it's visited, so its queries are in use the whole time and `gcTime` doesn't count while the app is open. Persistence makes the difference when the app is reopened.
+- **Thinking `select` changes what gets saved**: `select` only transforms the data when handing it to the screen, and the cache keeps storing the `queryFn` response unchanged. You can change `select` freely without changing `buster`, which is only needed when the shape of what `queryFn` returns changes.
+- **Changing a query's `queryKey`**: the cache saved under the old key goes unused. It doesn't break anything and is discarded on its own once `gcTime` passes.
 - **Changing the data shape without changing `buster`**: users who update the app get the cache in the old shape.
 - **Persisting sensitive data**: AsyncStorage stores plain text.
 

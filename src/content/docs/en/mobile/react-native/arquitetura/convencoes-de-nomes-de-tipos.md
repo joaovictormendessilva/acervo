@@ -1,9 +1,9 @@
 ---
 title: Type naming conventions
-description: How to name TypeScript types (domain model, API response, props, parameters) and why to use type everywhere.
+description: How to name TypeScript types (domain model, summary, API response and parameters, props) and why to use type everywhere.
 tecnologia: typescript
 versao_testada: TypeScript 6.0
-atualizado_em: 2026-11-14
+atualizado_em: 2026-11-15
 fontes:
   - https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces
 sidebar:
@@ -16,11 +16,13 @@ The pattern I use to name types. The main rule: **the domain model keeps the pla
 
 | Role | Convention | Example |
 | --- | --- | --- |
-| Domain model | plain name | `Product` |
+| Domain model (complete) | plain name | `Product` |
+| Summarized version (for lists) | `Summary` suffix | `ProductSummary` |
 | Raw API response | `Response` suffix | `ProductResponse` |
-| Component props | `Props` suffix | `ProductCardProps` |
-| Function input | `Params` suffix | `GetProductsParams` |
+| Parameters sent to the API | `Request` suffix | `GetProductsRequest` |
+| App function input | `Params` suffix | `GetProductsParams` |
 | Function output | `Result` suffix | `GetProductsResult` |
+| Component props | `Props` suffix | `ProductCardProps` |
 | Union of possible values | name of the concept | `ProductCategory` |
 
 And everything is declared with `type`, never with `interface`.
@@ -28,15 +30,16 @@ And everything is declared with `type`, never with `interface`.
 ## When to use
 
 - In any TypeScript project, from the start.
-- When the same concept shows up in several shapes (what comes from the API, what the app uses, what the component receives) and you need to tell which shape you're looking at just from the name.
+- When the same concept shows up in several shapes (what comes from the API, what the app uses, what the list shows, what the component receives) and you need to tell which shape you're looking at just from the name.
 
 ## Why the model has no suffix
 
-The domain model is **the concept itself**: `Product` is the product, with the names and types your app uses. In DDD (Domain-Driven Design) this is called *ubiquitous language*, because the type uses the same word you'd use when talking about the app ("the product has a name and a price").
+The domain model is **the concept itself**: `Product` is the product, with the names and types your app uses. In DDD (Domain-Driven Design) this is called *ubiquitous language*, because the type uses the same word you'd use when talking about the app ("the product has a name, a price and a description").
 
 The other shapes derive from it, and the suffix answers "derived from what?":
 
-- `ProductResponse` is the shape **someone else** defined (the API).
+- `ProductSummary` is a **part** of the product, the one that fits in a list.
+- `ProductResponse` and `GetProductsRequest` are the shape **someone else** defined (the API).
 - `ProductCardProps` is what **a component** receives.
 
 Context also comes from the import path, which says where the type is from:
@@ -47,25 +50,37 @@ import { Product } from "@/features/products/product-types";
 
 ## Step by step
 
-### 1. The domain model, with the plain name
+### 1. The domain model, complete and summarized
 
 ```ts title="src/features/products/product-types.ts"
 export type ProductCategory = "clothing" | "electronics" | "books";
 
-export type Product = {
+export type ProductSummary = {
   id: string;
   name: string;
   price: number;
-  category: ProductCategory;
-  createdAt: Date;
+  createdAt: string;
+};
+
+export type Product = ProductSummary & {
+  description: string;
+  images: string[];
 };
 ```
 
-It uses camelCase and real types (`Date`, not string), because it's the shape the app works with.
+The **plain name goes to the complete version**, because it's the one that represents "the actual product". The summary is the variation, so it gets the suffix. The other way around (`Product` for the summary and `ProductDetail` for the complete one), a few months from now you'd read `Product` and think of the whole product.
 
-### 2. The API response, faithful to what arrives
+The model uses camelCase and the app's types. Dates stay as ISO strings, so the type stays correct if the data goes through a cache saved as JSON.
+
+### 2. The API types, faithful to what it uses
 
 ```ts title="src/features/products/api/product-api-types.ts"
+export type GetProductsRequest = {
+  page: number;
+  per_page: number;
+  category: "clothing" | "electronics" | "books";
+};
+
 export type ProductResponse = {
   id: string;
   name: string;
@@ -75,41 +90,52 @@ export type ProductResponse = {
   created_at: string;
   updated_at: string;
 };
+
+export type ProductDetailResponse = ProductResponse & {
+  description: string;
+  images: string[];
+};
 ```
 
-This type has **every field** the API returns, even the ones the app doesn't use, with the original names (snake_case) and original types (dates as strings). That way it works as API documentation inside the code: to know what comes from the server, you look at the type instead of calling the API.
+These types have **every field** the API uses, even the ones the app ignores, with the original names (snake_case). That way they work as API documentation inside the code: to know what goes to and comes from the server, you look at the type instead of calling the API.
+
+`Request` exists to keep the API's params apart from the app's params. The API takes `per_page`, and the app doesn't need to know that.
 
 ### 3. Converting between the two
 
 ```ts title="src/features/products/product-adapter.ts"
-import { ProductResponse } from "./api/product-api-types";
-import { Product, ProductCategory } from "./product-types";
+import { ProductDetailResponse, ProductResponse } from "./api/product-api-types";
+import { Product, ProductSummary } from "./product-types";
 
-function toProduct(response: ProductResponse): Product {
-  return {
-    id: response.id,
-    name: response.name,
-    price: response.price_in_cents / 100,
-    category: response.category as ProductCategory,
-    createdAt: new Date(response.created_at),
-  };
-}
+const toProductSummary = (response: ProductResponse): ProductSummary => ({
+  id: response.id,
+  name: response.name,
+  price: response.price_in_cents / 100,
+  createdAt: response.created_at,
+});
+
+const toProduct = (response: ProductDetailResponse): Product => ({
+  ...toProductSummary(response),
+  description: response.description,
+  images: response.images,
+});
 
 export const productAdapter = {
+  toProductSummary,
   toProduct,
 };
 ```
 
-This is where the unused fields are left behind. The adapter trims, not the response type.
+This is where the unused fields are left behind. The adapter trims, not the response type. `toProduct` reuses `toProductSummary` with a spread, so a shared field is mapped in a single place.
 
 ## Full example
 
-`Params` and `Result` in a function, and `Props` in a component:
+`Params` and `Result` in an app function, and `Props` in a component:
 
 ```ts title="src/features/products/product-service.ts"
 import { productApi } from "./api/product-api";
 import { productAdapter } from "./product-adapter";
-import { Product, ProductCategory } from "./product-types";
+import { ProductCategory, ProductSummary } from "./product-types";
 
 type GetProductsParams = {
   category: ProductCategory;
@@ -117,18 +143,18 @@ type GetProductsParams = {
 };
 
 type GetProductsResult = {
-  products: Product[];
+  products: ProductSummary[];
   hasNextPage: boolean;
 };
 
-async function getProducts({ category, page }: GetProductsParams): Promise<GetProductsResult> {
-  const { items, hasNextPage } = await productApi.getProducts({ category, page });
+const getProducts = async ({ category, page }: GetProductsParams): Promise<GetProductsResult> => {
+  const { products, hasNextPage } = await productApi.getProducts({ page, per_page: 20, category });
 
   return {
-    products: items.map(productAdapter.toProduct),
+    products: products.map(productAdapter.toProductSummary),
     hasNextPage,
   };
-}
+};
 
 export const productService = {
   getProducts,
@@ -138,10 +164,10 @@ export const productService = {
 ```tsx title="src/features/products/components/product-card.tsx"
 import { Text, View } from "react-native";
 
-import { Product } from "../product-types";
+import { ProductSummary } from "../product-types";
 
 type ProductCardProps = {
-  product: Product;
+  product: ProductSummary;
 };
 
 export function ProductCard({ product }: ProductCardProps) {
@@ -157,6 +183,62 @@ export function ProductCard({ product }: ProductCardProps) {
 :::tip
 If TypeScript can infer the return type, you don't need to declare the `Result`. Declare it when you want the output type explicit and documented, for example in a function other parts of the app use.
 :::
+
+## Summary and complete: where each field goes
+
+The summary isn't "what the list shows". It's **the part of the product that both API responses include**. The screen picks what to display.
+
+| Change | What you touch |
+| --- | --- |
+| The list stops showing the price | only the list component. `ProductSummary` keeps `price`. |
+| The API renames a shared field | only `toProductSummary`, and the complete one follows through the spread. |
+| The list API stops sending a field, but the detail still sends it | move the field from the summary to the complete one (see below). |
+
+### Moving a field when the API changes
+
+If the list stops sending `created_at` but the detail keeps sending it, the field leaves the summary and goes into the complete one, in the API types, the model and the adapter. The examples only show the fields that matter for the change:
+
+```ts title="src/features/products/api/product-api-types.ts"
+export type ProductResponse = {
+  id: string;
+  name: string;
+  price_in_cents: number;
+};
+
+export type ProductDetailResponse = ProductResponse & {
+  description: string;
+  created_at: string;
+};
+```
+
+```ts title="src/features/products/product-adapter.ts"
+import { ProductDetailResponse, ProductResponse } from "./api/product-api-types";
+import { Product, ProductSummary } from "./product-types";
+
+const toProductSummary = (response: ProductResponse): ProductSummary => ({
+  id: response.id,
+  name: response.name,
+  price: response.price_in_cents / 100,
+});
+
+const toProduct = (response: ProductDetailResponse): Product => ({
+  ...toProductSummary(response),
+  description: response.description,
+  createdAt: response.created_at,
+});
+
+export const productAdapter = {
+  toProductSummary,
+  toProduct,
+};
+```
+
+The spread stays the same, and the field just moves below it. When you remove `createdAt` from `ProductSummary`, `tsc` points to every place still using that field on a summary, so you don't have to remember where it was displayed.
+
+The rule becomes:
+
+- **A field both responses have** lives in the summary and reaches the complete one through the spread.
+- **A field only the detail has** lives only in the complete one, below the spread.
 
 ## `type` or `interface`?
 
@@ -188,6 +270,9 @@ Each person on the team would draw the line somewhere else, and the discussion w
 
 - **`I` or `T` prefix** (`IProduct`, `TProduct`): comes from C# and Hungarian notation. The TypeScript community doesn't use it, and the editor already shows it's a type.
 - **Suffixes that repeat the keyword** (`ProductType`, `ProductInterface`, `ProductModel`): not wrong, but noise. The `type` in the declaration already says it's a type.
+- **Giving the plain name to the summary**: `Product` for the list and `ProductDetail` for the complete one works, but goes against the intuition that "the product" is the whole object.
+- **Removing a field from the summary because a screen stopped showing it**: the summary describes what the API sends, not what a screen displays. The component is what picks what to show.
+- **Using the same params type for the API and the app**: the API's vocabulary (`per_page`, snake_case) leaks up to the screen. Use `Request` for the API and `Params` for the app.
 - **Typing parameters inline in the signature** (`getProducts(params: { page: number; category: string })`): it works, but when a new parameter comes in you change the function signature. With a `GetProductsParams`, the contract lives in one named place, and callers can reuse the type.
 - **Using the API type in components**: the app starts "thinking" in someone else's vocabulary. If the API renames a field, every component breaks, not just the adapter.
 - **Trimming fields from the response type "because they're unused"**: the moment you need a field, you'll have to check the API instead of reading the code.
