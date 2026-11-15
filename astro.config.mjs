@@ -43,6 +43,11 @@ export default defineConfig({
 									translations: { en: 'Dates' },
 									items: [{ autogenerate: { directory: 'mobile/react-native/datas' } }],
 								},
+								{
+									label: 'Rede',
+									translations: { en: 'Networking' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/rede' } }],
+								},
 							],
 						},
 					],
