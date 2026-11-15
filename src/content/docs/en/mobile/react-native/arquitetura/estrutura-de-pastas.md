@@ -3,7 +3,7 @@ title: Folder structure
 description: Folder organization pattern for Expo apps with Expo Router.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58
-atualizado_em: 2026-11-08
+atualizado_em: 2026-11-14
 fontes:
   - https://docs.expo.dev/router/basics/core-concepts/
 sidebar:
@@ -61,6 +61,27 @@ To decide, ask: **"Would this file work in a completely different app, without c
 
 `shared/` never imports anything from `features/`.
 
+## When to create a subfolder
+
+Create a subfolder **only when it will group more than one file**. A single file stays loose, and its name already says what it is:
+
+```
+src/features/products/
+├── api/
+│   ├── product-api.ts
+│   └── product-api-types.ts
+├── components/
+│   ├── product-card.tsx
+│   └── product-list.tsx
+├── product-adapter.ts
+├── product-service.ts
+└── product-types.ts
+```
+
+- `api/` and `components/` are folders because each one has more than one file.
+- `product-service.ts` stays loose because it's the only service. A `services/` folder with a single file adds one more level to navigate with no gain: the `product-` prefix and the `-service` suffix already say what the file is.
+- When the second file of the same kind shows up (two services, several hooks), that's when it's worth creating the folder and moving both into it.
+
 ## Step by step
 
 ### 1. Routes live in `src/app/`
@@ -112,6 +133,7 @@ export default function RootLayout() {
 - **Files and folders in kebab-case**: `tab-button.tsx`, `dark-theme.ts`. This avoids problems with case-insensitive file systems (Windows and macOS), where renaming `TabButton.tsx` to `tabButton.tsx` isn't picked up by git.
 - **Components with named exports**: `export function TabButton()`. `export default` is only for screens in `src/app/`, because Expo Router requires it.
 - **Constants with `as const`**: values stay literal and TypeScript can check them (e.g. routes with `satisfies Record<string, Href>`).
+- **Type names**: see [Type naming conventions](/en/mobile/react-native/arquitetura/convencoes-de-nomes-de-tipos/).
 
 ## Common pitfalls
 

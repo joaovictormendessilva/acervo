@@ -3,7 +3,7 @@ title: Estrutura de pastas
 description: Padrão de organização de pastas para apps Expo com Expo Router.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58
-atualizado_em: 2026-11-08
+atualizado_em: 2026-11-14
 fontes:
   - https://docs.expo.dev/router/basics/core-concepts/
 sidebar:
@@ -61,6 +61,27 @@ Para decidir, pergunte: **"Esse arquivo funcionaria num app completamente difere
 
 O `shared/` nunca importa nada de `features/`.
 
+## Quando criar uma subpasta
+
+Crie uma subpasta **só quando ela vai agrupar mais de um arquivo**. Um arquivo sozinho fica solto, e o nome dele já diz o que ele é:
+
+```
+src/features/products/
+├── api/
+│   ├── product-api.ts
+│   └── product-api-types.ts
+├── components/
+│   ├── product-card.tsx
+│   └── product-list.tsx
+├── product-adapter.ts
+├── product-service.ts
+└── product-types.ts
+```
+
+- `api/` e `components/` são pastas porque cada uma tem mais de um arquivo.
+- `product-service.ts` fica solto porque é o único service. Uma pasta `services/` com um arquivo só cria um nível a mais de navegação, sem ganho nenhum: o prefixo `product-` e o sufixo `-service` já dizem o que o arquivo é.
+- Quando aparecer o segundo arquivo do mesmo tipo (dois services, vários hooks), aí vale criar a pasta e mover os dois para dentro.
+
 ## Passo a passo
 
 ### 1. Rotas ficam em `src/app/`
@@ -112,6 +133,7 @@ export default function RootLayout() {
 - **Arquivos e pastas em kebab-case**: `tab-button.tsx`, `dark-theme.ts`. Isso evita problemas com sistemas de arquivos que não diferenciam maiúsculas (Windows e macOS), onde renomear `TabButton.tsx` para `tabButton.tsx` não é detectado pelo git.
 - **Componentes com export nomeado**: `export function TabButton()`. O `export default` fica só para as telas em `src/app/`, porque o Expo Router exige.
 - **Constantes com `as const`**: os valores ficam literais e o TypeScript consegue checá-los (ex.: rotas com `satisfies Record<string, Href>`).
+- **Nomes de tipos**: veja [Convenções de nomes de tipos](/mobile/react-native/arquitetura/convencoes-de-nomes-de-tipos/).
 
 ## Armadilhas comuns
 
