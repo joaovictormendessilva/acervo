@@ -3,7 +3,7 @@ title: Expo Router — custom tabs
 description: Your own tab bar with Tabs, TabSlot, TabList and TabTrigger from expo-router/ui.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58 · React Native 0.88
-atualizado_em: 2026-11-08
+atualizado_em: 2026-11-21
 fontes:
   - https://docs.expo.dev/router/advanced/custom-tabs/
   - https://docs.expo.dev/router/basics/redirects/
@@ -270,6 +270,8 @@ With `style={{ display: 'none' }}` on `TabList`, the list only registers the tab
 - **Forgetting `asChild`**: `TabTrigger` renders its own `Pressable` around your component, and `isFocused` never reaches it.
 - **Relative `href`**: it resolves from where `Tabs` is rendered. The docs recommend absolute `href`s only.
 - **Route in a shared group** `(a,b)`: the `href` must include the group so it points to a single route.
+- **Transparent background on the root Stack** (`contentStyle: { backgroundColor: "transparent" }` with the color on a wrapping `View`): during a push, the new screen slides in without covering the previous one. Both show on top of each other and Android has to draw both full layers every frame, which makes the animation stutter. Give each screen an opaque background with `contentStyle: { backgroundColor: "#0a0a0a" }` and drop the colored `View`.
+- **Every tab switch renders all mounted tabs again**: `TabSlot` calls the render of every loaded tab, not only the active one. With large lists in the tabs, switching gets slow. The [React Compiler](/en/mobile/react-native/performance/react-compiler/) fixes it without manual `memo`.
 
 ## What changed between versions
 

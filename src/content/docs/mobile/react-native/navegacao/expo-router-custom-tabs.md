@@ -3,7 +3,7 @@ title: Expo Router — custom tabs
 description: Barra de abas própria com Tabs, TabSlot, TabList e TabTrigger do expo-router/ui.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58 · React Native 0.88
-atualizado_em: 2026-11-08
+atualizado_em: 2026-11-21
 fontes:
   - https://docs.expo.dev/router/advanced/custom-tabs/
   - https://docs.expo.dev/router/basics/redirects/
@@ -270,6 +270,8 @@ Com `style={{ display: 'none' }}` no `TabList`, a lista só registra as abas. Fo
 - **Esquecer o `asChild`**: o `TabTrigger` renderiza o próprio `Pressable` em volta do seu componente, e o `isFocused` não chega até ele.
 - **`href` relativo**: ele é resolvido a partir de onde o `Tabs` está. A doc recomenda usar só `href` absoluto.
 - **Rota em grupo compartilhado** `(a,b)`: o `href` precisa incluir o grupo para apontar para uma rota só.
+- **Fundo transparente no Stack raiz** (`contentStyle: { backgroundColor: "transparent" }` com a cor num `View` em volta): durante o push, a tela nova desliza sem cobrir a anterior. As duas aparecem sobrepostas e o Android precisa desenhar as duas camadas inteiras a cada frame, o que deixa a animação travada. Dê a cada tela um fundo opaco com `contentStyle: { backgroundColor: "#0a0a0a" }` e dispense o `View` com a cor.
+- **Toda troca de aba renderiza de novo todas as abas já montadas**: o `TabSlot` chama o render de cada aba carregada, não só da ativa. Com listas grandes nas abas, a troca fica lenta. O [React Compiler](/mobile/react-native/performance/react-compiler/) resolve sem precisar de `memo` manual.
 
 ## O que mudou entre versões
 

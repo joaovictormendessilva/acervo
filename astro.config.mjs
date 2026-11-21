@@ -48,6 +48,16 @@ export default defineConfig({
 									translations: { en: 'Networking' },
 									items: [{ autogenerate: { directory: 'mobile/react-native/rede' } }],
 								},
+								{
+									label: 'Conteúdo',
+									translations: { en: 'Content' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/conteudo' } }],
+								},
+								{
+									label: 'Performance',
+									translations: { en: 'Performance' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/performance' } }],
+								},
 							],
 						},
 					],
