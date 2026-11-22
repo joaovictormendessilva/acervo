@@ -289,6 +289,68 @@ export const productService = {
 
 O `ProductParams` é passado para a api, que espera um `ProductRequest`. O TypeScript aceita porque os formatos são iguais. É exatamente o caso de "iguais hoje, mas cada um muda por um motivo".
 
+## Formatos diferentes da mesma entidade
+
+Às vezes a API manda a mesma entidade em mais de um formato. Por exemplo, uma avaliação removida que volta só com o `id`. O tipo da resposta declara os dois formatos, e o modelo vira uma união com um campo que diz qual é o caso. Assim o TypeScript não deixa a tela ler um campo que pode não existir sem antes checar o caso.
+
+```ts title="src/features/products/api/product-api-types.ts"
+export type PublishedReviewResponse = {
+  id: string;
+  body: string;
+  author_name: string;
+  created_at: string;
+};
+
+export type RemovedReviewResponse = Pick<PublishedReviewResponse, "id">;
+
+export type ReviewResponse = PublishedReviewResponse | RemovedReviewResponse;
+```
+
+```ts title="src/features/products/product-types.ts"
+export type PublishedReview = {
+  id: string;
+  isRemoved: false;
+  body: string;
+  authorName: string;
+  createdAt: string;
+};
+
+export type RemovedReview = {
+  id: string;
+  isRemoved: true;
+};
+
+export type Review = PublishedReview | RemovedReview;
+```
+
+```ts title="src/features/products/product-adapter.ts"
+import { PublishedReviewResponse, ReviewResponse } from "./api/product-api-types";
+import { Review } from "./product-types";
+
+const isPublishedReview = (review: ReviewResponse): review is PublishedReviewResponse => "body" in review;
+
+const toReview = (review: ReviewResponse): Review => {
+  if (!isPublishedReview(review)) {
+    return {
+      id: review.id,
+      isRemoved: true,
+    };
+  }
+
+  return {
+    id: review.id,
+    isRemoved: false,
+    body: review.body,
+    authorName: review.author_name,
+    createdAt: review.created_at,
+  };
+};
+```
+
+Cada caso do modelo ganha um nome (`PublishedReview`, `RemovedReview`), como os DTOs, e a união fica numa linha só no fim. No adapter, o caso de exceção sai cedo e o formato principal fica no `return` final.
+
+O guard pergunta pelo formato **completo** (`isPublishedReview`), e não pelo reduzido. Como o reduzido é um `Pick` do completo, todo item completo também cabe no tipo reduzido. Um guard `review is RemovedReviewResponse` deixaria os dois formatos entrarem no `if`, e o que sobra embaixo viraria `never`.
+
 ## `type` ou `interface`?
 
 A doc oficial do TypeScript trata como **preferência pessoal**. No handbook, a seção *Differences Between Type Aliases and Interfaces* termina assim:

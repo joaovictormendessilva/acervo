@@ -21,9 +21,19 @@ Se o arquivo não existir, pergunte ao usuário onde o acervo está clonado. Nã
 
 ## 2. Definir o escopo
 
-- Se o usuário passou um caminho ou uma pasta, revise isso.
-- Se não passou nada, revise o que mudou: `git diff HEAD` e os arquivos não rastreados (`git status --short`).
-- Se ele pediu o projeto inteiro, revise `src/`.
+Se o usuário já disse o que revisar, use isso:
+
+| Pedido | Escopo | Como listar os arquivos |
+| --- | --- | --- |
+| um caminho ou uma pasta | só esse caminho | o próprio caminho |
+| `mudancas` | o que ainda não foi commitado (staged e não staged) e os arquivos novos | `git diff HEAD --name-only` e `git status --short` |
+| `ultimo-commit` | o que entrou no último commit | `git diff HEAD~1 HEAD --name-only` |
+| `branch` | tudo o que a branch mudou desde que saiu da principal, commitado ou não | `git diff $(git merge-base HEAD <principal>) --name-only` e `git status --short` |
+| `tudo` | o projeto inteiro | os arquivos de `src/` |
+
+A branch principal é a que o `git symbolic-ref refs/remotes/origin/HEAD` aponta. Sem remoto, use `main` ou `master`, a que existir.
+
+**Se o usuário não disse nada, não escolha por ele.** Rode os comandos acima, conte quantos arquivos cada escopo tem e pergunte qual ele quer, mostrando a contagem ao lado de cada opção. Deixe de fora as opções vazias (sem mudanças, ou a branch já é a principal). O projeto inteiro é o escopo que mais gasta tokens, e só deve ser revisado quando ele escolher.
 
 Para julgar duplicação e camadas, leia também os arquivos **relacionados** ao que mudou, e não só o diff: os `*-types.ts` e `api/*-api-types.ts` da feature, o adapter, o service e quem importa o arquivo alterado. Uma duplicação na mesma camada (L3.7) só aparece olhando o arquivo de tipos inteiro.
 

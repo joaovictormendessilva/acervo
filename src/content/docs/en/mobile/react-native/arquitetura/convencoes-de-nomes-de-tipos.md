@@ -289,6 +289,68 @@ export const productService = {
 
 `ProductParams` is passed to the api, which expects a `ProductRequest`. TypeScript accepts it because the shapes match. It's exactly the "equal today, but each changes for its own reason" case.
 
+## Different shapes of the same entity
+
+Sometimes the API sends the same entity in more than one shape. For example, a removed review that comes back with only its `id`. The response type declares both shapes, and the model becomes a union with a field that says which case it is. That way TypeScript won't let the screen read a field that may not exist without checking the case first.
+
+```ts title="src/features/products/api/product-api-types.ts"
+export type PublishedReviewResponse = {
+  id: string;
+  body: string;
+  author_name: string;
+  created_at: string;
+};
+
+export type RemovedReviewResponse = Pick<PublishedReviewResponse, "id">;
+
+export type ReviewResponse = PublishedReviewResponse | RemovedReviewResponse;
+```
+
+```ts title="src/features/products/product-types.ts"
+export type PublishedReview = {
+  id: string;
+  isRemoved: false;
+  body: string;
+  authorName: string;
+  createdAt: string;
+};
+
+export type RemovedReview = {
+  id: string;
+  isRemoved: true;
+};
+
+export type Review = PublishedReview | RemovedReview;
+```
+
+```ts title="src/features/products/product-adapter.ts"
+import { PublishedReviewResponse, ReviewResponse } from "./api/product-api-types";
+import { Review } from "./product-types";
+
+const isPublishedReview = (review: ReviewResponse): review is PublishedReviewResponse => "body" in review;
+
+const toReview = (review: ReviewResponse): Review => {
+  if (!isPublishedReview(review)) {
+    return {
+      id: review.id,
+      isRemoved: true,
+    };
+  }
+
+  return {
+    id: review.id,
+    isRemoved: false,
+    body: review.body,
+    authorName: review.author_name,
+    createdAt: review.created_at,
+  };
+};
+```
+
+Each model case gets a name (`PublishedReview`, `RemovedReview`), like the DTOs, and the union sits on a single line at the end. In the adapter, the exception case returns early and the main shape stays in the final `return`.
+
+The guard asks for the **complete** shape (`isPublishedReview`), not the reduced one. Since the reduced one is a `Pick` of the complete one, every complete item also fits the reduced type. A `review is RemovedReviewResponse` guard would let both shapes into the `if`, and what's left below would become `never`.
+
 ## `type` or `interface`?
 
 The official TypeScript docs treat it as **personal preference**. In the handbook, the *Differences Between Type Aliases and Interfaces* section ends like this:
