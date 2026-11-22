@@ -3,7 +3,7 @@ title: Folder structure
 description: Folder organization pattern for Expo apps with Expo Router.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58
-atualizado_em: 2026-11-15
+atualizado_em: 2026-11-22
 fontes:
   - https://docs.expo.dev/router/basics/core-concepts/
 sidebar:
@@ -54,12 +54,14 @@ src/
 
 Both folders exist together, and one doesn't replace the other. Once the app has code about its subject (products in a store, posts in a news reader), that code goes into `src/features/<subject>/`, for example `features/products/` with components, hooks, services and types.
 
-To decide, ask: **"Would this file work in a completely different app, without changing anything?"**
+To decide, ask: **"Does this file know what a domain entity is?"**
 
-- **Yes** → `shared/`. E.g. `Header`, `Button`, the theme, a date formatting function.
-- **No, because it's about the app's subject** → `features/<subject>/`. E.g. `ProductCard`, fetching products from the API, the `Product` type.
+- **No** → `shared/`. E.g. `Header`, `Button`, the theme, a date formatting function.
+- **Yes, because it's about the app's subject** → `features/<subject>/`. E.g. `ProductCard`, fetching products from the API, the `Product` type.
 
-`shared/` never imports anything from `features/`.
+A `shared/` file **may** depend on app infrastructure: a `Header` that uses the theme colors is still shared. What it can't do is know what a product is.
+
+Dependencies only flow down: `app → features → shared`. `shared/` never imports anything from `features/`, and a feature doesn't import from another. The full rules are in [Architecture laws](/en/mobile/react-native/arquitetura/leis-de-arquitetura/).
 
 ## When to create a subfolder
 

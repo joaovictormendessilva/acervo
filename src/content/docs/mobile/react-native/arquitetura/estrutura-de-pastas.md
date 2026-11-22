@@ -3,7 +3,7 @@ title: Estrutura de pastas
 description: Padrão de organização de pastas para apps Expo com Expo Router.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58
-atualizado_em: 2026-11-15
+atualizado_em: 2026-11-22
 fontes:
   - https://docs.expo.dev/router/basics/core-concepts/
 sidebar:
@@ -54,12 +54,14 @@ src/
 
 As duas pastas existem juntas, e uma não substitui a outra. Quando o app começa a ter código sobre o assunto dele (produtos numa loja, posts num leitor de notícias), esse código vai para `src/features/<assunto>/`, por exemplo `features/products/` com componentes, hooks, services e tipos.
 
-Para decidir, pergunte: **"Esse arquivo funcionaria num app completamente diferente, sem mudar nada?"**
+Para decidir, pergunte: **"Esse arquivo sabe o que é uma entidade do domínio?"**
 
-- **Sim** → `shared/`. Ex.: `Header`, `Button`, tema, uma função que formata datas.
-- **Não, porque fala do assunto do app** → `features/<assunto>/`. Ex.: `ProductCard`, a busca de produtos na API, o tipo `Product`.
+- **Não** → `shared/`. Ex.: `Header`, `Button`, tema, uma função que formata datas.
+- **Sim, porque fala do assunto do app** → `features/<assunto>/`. Ex.: `ProductCard`, a busca de produtos na API, o tipo `Product`.
 
-O `shared/` nunca importa nada de `features/`.
+Um arquivo do `shared/` **pode** depender da infraestrutura do app: um `Header` que usa as cores do tema continua sendo shared. O que ele não pode é saber o que é um produto.
+
+As dependências só descem: `app → features → shared`. O `shared/` nunca importa nada de `features/`, e uma feature não importa de outra. As regras completas estão em [Leis de arquitetura](/mobile/react-native/arquitetura/leis-de-arquitetura/).
 
 ## Quando criar uma subpasta
 

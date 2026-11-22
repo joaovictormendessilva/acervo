@@ -3,7 +3,7 @@ title: Type naming conventions
 description: How to name TypeScript types (domain model, summary, API response and parameters, props) and why to use type everywhere.
 tecnologia: typescript
 versao_testada: TypeScript 6.0
-atualizado_em: 2026-11-15
+atualizado_em: 2026-11-22
 fontes:
   - https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces
 sidebar:
@@ -240,6 +240,55 @@ The rule becomes:
 - **A field both responses have** lives in the summary and reaches the complete one through the spread.
 - **A field only the detail has** lives only in the complete one, below the spread.
 
+## Equal types: keep apart or merge?
+
+Two types with the same fields aren't always duplication. What decides is the question: **"if one changes, does the other change too?"**
+
+**In different layers, they stay separate.** `GetProductRequest` and `GetProductParams` may match today, but one changes when the API changes and the other when the app changes. If the API renames `id` to `product_id`, only the `Request` changes, and the service translates.
+
+**In the same layer, representing the same concept, they become one type.** Imagine the app fetches a product and its reviews:
+
+```ts title="src/features/products/product-types.ts" del={1-7} ins={9-11}
+export type GetProductParams = {
+  id: string;
+};
+
+export type GetReviewsParams = {
+  id: string;
+};
+
+export type ProductParams = {
+  id: string;
+};
+```
+
+Both types say the same thing: **which product**. There's no situation where one changes and the other doesn't. If the product starts being identified by `slug`, both change together, always. So it's a single type, with the **name of the concept** (`ProductParams`), not one per function. The API side works the same way: if both endpoints use the same `/products/{id}` path, they take a single `ProductRequest`.
+
+```ts title="src/features/products/product-service.ts"
+import { productApi } from "./api/product-api";
+import { productAdapter } from "./product-adapter";
+import { ProductParams } from "./product-types";
+
+const getProduct = async (params: ProductParams) => {
+  const product = await productApi.getProduct(params);
+
+  return productAdapter.toProduct(product);
+};
+
+const getReviews = async (params: ProductParams) => {
+  const reviews = await productApi.getReviews(params);
+
+  return reviews.map((review) => productAdapter.toReview(review));
+};
+
+export const productService = {
+  getProduct,
+  getReviews,
+};
+```
+
+`ProductParams` is passed to the api, which expects a `ProductRequest`. TypeScript accepts it because the shapes match. It's exactly the "equal today, but each changes for its own reason" case.
+
 ## `type` or `interface`?
 
 The official TypeScript docs treat it as **personal preference**. In the handbook, the *Differences Between Type Aliases and Interfaces* section ends like this:
@@ -273,6 +322,8 @@ Each person on the team would draw the line somewhere else, and the discussion w
 - **Giving the plain name to the summary**: `Product` for the list and `ProductDetail` for the complete one works, but goes against the intuition that "the product" is the whole object.
 - **Removing a field from the summary because a screen stopped showing it**: the summary describes what the API sends, not what a screen displays. The component is what picks what to show.
 - **Using the same params type for the API and the app**: the API's vocabulary (`per_page`, snake_case) leaks up to the screen. Use `Request` for the API and `Params` for the app.
+- **One params type per function when they all take the same thing** (`GetProductParams`, `GetReviewsParams`): that's duplication. If the concept changes, you have to remember to change all of them. Use one type named after the concept (`ProductParams`).
+- **A component redeclaring the model type**: a local copy decouples nothing, it just creates a version that has to be kept in sync by hand. Import it from the feature.
 - **Typing parameters inline in the signature** (`getProducts(params: { page: number; category: string })`): it works, but when a new parameter comes in you change the function signature. With a `GetProductsParams`, the contract lives in one named place, and callers can reuse the type.
 - **Using the API type in components**: the app starts "thinking" in someone else's vocabulary. If the API renames a field, every component breaks, not just the adapter.
 - **Trimming fields from the response type "because they're unused"**: the moment you need a field, you'll have to check the API instead of reading the code.

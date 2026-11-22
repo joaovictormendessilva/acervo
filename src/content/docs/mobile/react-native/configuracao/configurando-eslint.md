@@ -3,9 +3,11 @@ title: Configurando ESLint no Expo
 description: Como adicionar e usar o ESLint num projeto Expo com a config oficial (flat config).
 tecnologia: expo
 versao_testada: Expo SDK 58 · ESLint 9
-atualizado_em: 2026-11-04
+atualizado_em: 2026-11-22
 fontes:
   - https://docs.expo.dev/guides/using-eslint/
+  - https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/order.md
+  - https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint
 sidebar:
   order: 1
 ---
@@ -96,8 +98,73 @@ module.exports = defineConfig([
 ]);
 ```
 
+## Variações / exemplos avançados
+
+### Ordem dos imports automática
+
+O `eslint-config-expo` já inclui o `eslint-plugin-import`, então a regra `import/order` pode ser ligada sem instalar nada:
+
+```js title="eslint.config.js" ins={9-22}
+const { defineConfig } = require('eslint/config');
+const expoConfig = require('eslint-config-expo/flat');
+
+module.exports = defineConfig([
+  expoConfig,
+  {
+    ignores: ['dist/*'],
+  },
+  {
+    settings: {
+      'import/internal-regex': '^@/',
+    },
+    rules: {
+      'import/order': [
+        'warn',
+        {
+          groups: [['builtin', 'external'], 'internal', ['parent', 'sibling', 'index']],
+          'newlines-between': 'always',
+          alphabetize: { order: 'asc', caseInsensitive: true },
+        },
+      ],
+    },
+  },
+]);
+```
+
+- `groups` define a ordem dos blocos: libs externas (e módulos do Node), depois o código do projeto pelo alias, e por último os caminhos relativos.
+- `import/internal-regex` diz ao plugin que tudo que começa com `@/` é código do projeto. Sem isso, o alias não cai no grupo `internal`.
+- `newlines-between: 'always'` exige uma linha em branco entre os grupos e proíbe linhas em branco dentro de um grupo.
+- `alphabetize` ordena os imports dentro de cada grupo.
+
+O resultado fica assim:
+
+```tsx title="src/features/products/components/product-card.tsx"
+import { Text, View } from "react-native";
+
+import { Card } from "@/shared/components/card";
+
+import { ProductSummary } from "../product-types";
+```
+
+Para não precisar lembrar da regra, deixe o VS Code corrigir ao salvar. É preciso ter a extensão **ESLint** (`dbaeumer.vscode-eslint`):
+
+```json title=".vscode/settings.json"
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}
+```
+
+Com o `.vscode/settings.json` commitado, todo mundo que abrir o projeto ganha a correção ao salvar. Para corrigir o projeto inteiro de uma vez, rode `npx expo lint --fix`.
+
+:::note
+Imports só de efeito, como `import "@/global.css"`, não são reordenados: mudar a ordem deles poderia mudar o comportamento do app. Deixe-os onde precisam estar, normalmente no topo do layout raiz.
+:::
+
 ## Armadilhas comuns
 
+- **Alias `@/` misturado com as libs externas**: falta o `import/internal-regex`. Sem ele, o plugin não reconhece o alias como código do projeto.
 - **Usar `npm install eslint` direto**: você pode acabar com versões incompatíveis com o SDK. Prefira `npx expo lint` ou `npx expo install`.
 - **Ter um `.eslintrc.*` antigo junto com o `eslint.config.js`**: o ESLint 9 usa o flat config, então apague o arquivo antigo para não se confundir.
 - **Lint não substitui typecheck**: rode também `npx tsc --noEmit`.

@@ -3,7 +3,7 @@ title: Convenções de nomes de tipos
 description: Como nomear tipos no TypeScript (modelo do domínio, resumo, resposta e parâmetros da API, props) e por que usar type em tudo.
 tecnologia: typescript
 versao_testada: TypeScript 6.0
-atualizado_em: 2026-11-15
+atualizado_em: 2026-11-22
 fontes:
   - https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces
 sidebar:
@@ -240,6 +240,55 @@ A regra fica:
 - **Um campo que as duas respostas têm** fica no resumo e chega ao completo pelo spread.
 - **Um campo que só o detalhe tem** fica só no completo, abaixo do spread.
 
+## Tipos iguais: separar ou juntar?
+
+Dois tipos com os mesmos campos nem sempre são duplicação. O que decide é a pergunta: **"se um mudar, o outro muda junto?"**
+
+**Em camadas diferentes, ficam separados.** `GetProductRequest` e `GetProductParams` podem ser iguais hoje, mas um muda quando a API muda e o outro quando o app muda. Se a API renomear `id` para `product_id`, só o `Request` muda, e o service traduz.
+
+**Na mesma camada, representando o mesmo conceito, viram um tipo só.** Imagine que o app busca um produto e as avaliações dele:
+
+```ts title="src/features/products/product-types.ts" del={1-7} ins={9-11}
+export type GetProductParams = {
+  id: string;
+};
+
+export type GetReviewsParams = {
+  id: string;
+};
+
+export type ProductParams = {
+  id: string;
+};
+```
+
+Os dois tipos dizem a mesma coisa: **qual produto**. Não existe situação em que um mude e o outro não. Se o produto passar a ser identificado por `slug`, os dois mudam juntos, sempre. Então é um tipo só, com o **nome do conceito** (`ProductParams`), e não um por função. Na API acontece o mesmo: se os dois endpoints usam o mesmo caminho `/products/{id}`, eles recebem um `ProductRequest` só.
+
+```ts title="src/features/products/product-service.ts"
+import { productApi } from "./api/product-api";
+import { productAdapter } from "./product-adapter";
+import { ProductParams } from "./product-types";
+
+const getProduct = async (params: ProductParams) => {
+  const product = await productApi.getProduct(params);
+
+  return productAdapter.toProduct(product);
+};
+
+const getReviews = async (params: ProductParams) => {
+  const reviews = await productApi.getReviews(params);
+
+  return reviews.map((review) => productAdapter.toReview(review));
+};
+
+export const productService = {
+  getProduct,
+  getReviews,
+};
+```
+
+O `ProductParams` é passado para a api, que espera um `ProductRequest`. O TypeScript aceita porque os formatos são iguais. É exatamente o caso de "iguais hoje, mas cada um muda por um motivo".
+
 ## `type` ou `interface`?
 
 A doc oficial do TypeScript trata como **preferência pessoal**. No handbook, a seção *Differences Between Type Aliases and Interfaces* termina assim:
@@ -273,6 +322,8 @@ Cada pessoa do time traçaria a linha num lugar diferente, e a discussão iria p
 - **Dar o nome puro para o resumo**: `Product` para a lista e `ProductDetail` para o completo funciona, mas contraria a intuição de que "o produto" é o objeto inteiro.
 - **Tirar um campo do resumo porque uma tela parou de mostrar**: o resumo descreve o que a API manda, não o que uma tela exibe. Quem escolhe o que mostrar é o componente.
 - **Usar o mesmo tipo de params na API e no app**: o vocabulário da API (`per_page`, snake_case) vaza até a tela. Use `Request` na API e `Params` no app.
+- **Um tipo de params por função quando todas recebem a mesma coisa** (`GetProductParams`, `GetReviewsParams`): é duplicação. Se o conceito mudar, você precisa lembrar de mudar todos. Use um tipo com o nome do conceito (`ProductParams`).
+- **Componente redeclarando o tipo do modelo**: uma cópia local não desacopla nada, só cria uma versão que precisa ser mantida igual na mão. Importe da própria feature.
 - **Tipar parâmetros direto na assinatura** (`getProducts(params: { page: number; category: string })`): funciona, mas quando entrar um parâmetro novo você mexe na assinatura da função. Com um `GetProductsParams`, o contrato fica num lugar só e com nome, e quem chama a função pode reaproveitar o tipo.
 - **Usar o tipo da API nos componentes**: o app passa a "pensar" com o vocabulário de outra pessoa. Se a API renomear um campo, todos os componentes quebram, e não só o adapter.
 - **Cortar campos do tipo da resposta "porque não usa"**: na hora que precisar de um campo, você vai ter que consultar a API em vez de olhar o código.
