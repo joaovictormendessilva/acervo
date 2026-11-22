@@ -66,6 +66,7 @@ The flow is `screen → hook → service → api → client`, always in that dir
 - **L2.2 The api returns the raw format.** The service converts it, with the adapter.
 - **L2.3 The hook returns the query untouched.** Data transformation goes in `select`. Spreading the query (`{ ...query, items }`) turns off React Query's render optimization.
 - **L2.4 The `queryKey` is hierarchical: `[feature, kind, params]`**, with the whole params object inside. Everything in the feature starts with the same prefix, child entities included (`["products", "list", params]`, `["products", "detail", params]`, `["products", "reviews", params]`), so `invalidateQueries({ queryKey: ["products"] })` refreshes all of it at once.
+- **L2.5 In an app with a persisted cache, changing the model shape requires bumping the cache version.** The cache saved on the device holds what the `queryFn` returned, that is, the model coming out of the adapter. If the adapter starts returning another shape (a new field, a renamed one, a union like in L3.11) and the version stays the same, anyone already using the app gets the old cache, and the screen breaks on data the type says exists. Keep the version in a constant (`CACHE_VERSION`), pass it as `buster` in `persistOptions` and bump it together with the model change. Changing only `select` doesn’t need a new version, since it doesn’t change what is saved. Details in [React Query persisted cache](/en/mobile/react-native/rede/react-query-cache-persistido/).
 
 ### Law 3: Types
 
@@ -101,6 +102,53 @@ The flow is `screen → hook → service → api → client`, always in that dir
   | Local variable holding a function's return | no: the function already has a typed return |
 
 - **L3.10 Singular and plural reflect what the name holds.** A list item has a singular name (`ChildResponse`, not `ChildrenResponse`), a list a plural one, and a `.map` parameter is the singular of the list, without reusing its name.
+- **L3.11 When the API sends different shapes for the same entity, the DTO declares the union and the model becomes a union with a field that identifies the case.** Example: a deleted item that comes back with only its `id`. With the union, TypeScript won't let the screen read a field that may not exist without checking the case first, and the error shows up in the typecheck, not on the device. The adapter decides which shape arrived with a *type guard* (a function that returns `x is Type`).
+
+  ```ts title="src/features/products/api/product-api-types.ts"
+  export type PublishedReviewResponse = {
+    id: string;
+    body: string;
+    author_name: string;
+    created_at: string;
+  };
+
+  export type RemovedReviewResponse = Pick<PublishedReviewResponse, "id">;
+
+  export type ReviewResponse = PublishedReviewResponse | RemovedReviewResponse;
+  ```
+
+  ```ts title="src/features/products/product-types.ts"
+  export type Review = { id: string } & (
+    | { isRemoved: false; body: string; authorName: string; createdAt: string }
+    | { isRemoved: true }
+  );
+  ```
+
+  ```ts title="src/features/products/product-adapter.ts"
+  import { PublishedReviewResponse, ReviewResponse } from "./api/product-api-types";
+  import { Review } from "./product-types";
+
+  const isPublishedReview = (review: ReviewResponse): review is PublishedReviewResponse => "body" in review;
+
+  const toReview = (review: ReviewResponse): Review => {
+    if (isPublishedReview(review)) {
+      return {
+        id: review.id,
+        isRemoved: false,
+        body: review.body,
+        authorName: review.author_name,
+        createdAt: review.created_at,
+      };
+    }
+
+    return {
+      id: review.id,
+      isRemoved: true,
+    };
+  };
+  ```
+
+  The guard asks for the **complete** shape (`isPublishedReview`), not the reduced one. Since the reduced one is a `Pick` of the complete one, every complete item also fits the reduced type. A `review is RemovedReviewResponse` guard would let both shapes into the `if`, and what's left below would become `never`.
 
 ### Law 4: Functions
 
@@ -125,6 +173,7 @@ The flow is `screen → hook → service → api → client`, always in that dir
 - **L6.1 The test is "if one changes, does the other change too?".** If so, it's the same thing and lives in one place. If not, the similarity is a coincidence and both stay separate (as in L3.6). It applies to types, components and values.
 - **L6.2 An abstraction only appears with the second use.** A helper or component extracted for a single use is anticipation.
 - **L6.3 A value used by more than one consumer is built once.** If two hooks take the same params, the screen builds the object once and passes it to both.
+- **L6.4 Small, side-by-side repetition inside the same function is accepted when it keeps the reading linear.** What L6.1 prevents is one copy changing while the other is left behind, and that happens when the copies are far apart. Two versions of an object, one right below the other in the same function (like the two `return`s in the L3.11 adapter), don't carry that risk: whoever touches one sees the other. Pulling the shared fields into a separate function just to avoid repeating them trades a low risk for a reading that forces you to jump between functions. Outside the same function, L6.1 applies as usual.
 
 ### Law 7: Performance
 
@@ -161,4 +210,6 @@ The code for each file is in the [layers](/en/mobile/react-native/rede/camadas-d
 
 ## What changed between versions
 
+- **2026-11-22 (revision 2)**: added bumping the cache version when the model shape changes (L2.5).
+- **2026-11-22 (revision)**: added the union for different shapes of the same entity (L3.11) and the accepted repetition inside the same function (L6.4).
 - **2026-11-22**: first version. Added duplication within the same layer (L3.7), the type-the-boundaries rule (L3.9), the ban on imports between features (L1.4), the props-by-layer rule (L5.1) and the domain-based shared criterion (L1.5), which replaced the "does it work in another app?" test.

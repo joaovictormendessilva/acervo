@@ -66,6 +66,7 @@ O fluxo é `tela → hook → service → api → client`, sempre nesse sentido.
 - **L2.2 A api devolve o formato cru.** Quem converte é o service, com o adapter.
 - **L2.3 O hook devolve a query sem mexer.** Transformação de dado vai no `select`. Espalhar a query (`{ ...query, items }`) desliga a otimização de renderização do React Query.
 - **L2.4 A `queryKey` é hierárquica: `[feature, tipo, params]`**, com os params inteiros dentro. Tudo da feature começa com o mesmo prefixo, inclusive as entidades filhas (`["products", "list", params]`, `["products", "detail", params]`, `["products", "reviews", params]`), para que `invalidateQueries({ queryKey: ["products"] })` atualize tudo de uma vez.
+- **L2.5 Em app com cache persistido, mudar o formato do modelo exige trocar a versão do cache.** O cache salvo no aparelho guarda o que o `queryFn` devolveu, ou seja, o modelo que sai do adapter. Se o adapter passa a devolver outro formato (campo novo, nome trocado, uma união como na L3.11) e a versão continua a mesma, quem já usava o app recebe o cache antigo, e a tela quebra com dados que o tipo diz que existem. Guarde a versão numa constante (`CACHE_VERSION`), passe como `buster` no `persistOptions` e aumente junto com a mudança no modelo. Mudar só o `select` não exige nova versão, porque ele não altera o que é salvo. Detalhes em [Cache persistido do React Query](/mobile/react-native/rede/react-query-cache-persistido/).
 
 ### Lei 3: Tipos
 
@@ -101,6 +102,53 @@ O fluxo é `tela → hook → service → api → client`, sempre nesse sentido.
   | Variável local que recebe o retorno de uma função | não: a função já tem o retorno tipado |
 
 - **L3.10 Singular e plural refletem o que o nome guarda.** Um item de lista tem nome no singular (`ChildResponse`, não `ChildrenResponse`), uma lista no plural, e o parâmetro de um `.map` é o singular da lista, sem repetir o nome dela.
+- **L3.11 Quando a API manda formatos diferentes para a mesma entidade, o DTO declara a união e o modelo vira uma união com um campo que identifica o caso.** Exemplo: um item excluído que volta só com o `id`. Com a união, o TypeScript não deixa a tela ler um campo que pode não existir sem antes checar o caso, e o erro aparece no typecheck, não no aparelho. O adapter decide qual formato chegou com um *type guard* (uma função que devolve `x is Tipo`).
+
+  ```ts title="src/features/products/api/product-api-types.ts"
+  export type PublishedReviewResponse = {
+    id: string;
+    body: string;
+    author_name: string;
+    created_at: string;
+  };
+
+  export type RemovedReviewResponse = Pick<PublishedReviewResponse, "id">;
+
+  export type ReviewResponse = PublishedReviewResponse | RemovedReviewResponse;
+  ```
+
+  ```ts title="src/features/products/product-types.ts"
+  export type Review = { id: string } & (
+    | { isRemoved: false; body: string; authorName: string; createdAt: string }
+    | { isRemoved: true }
+  );
+  ```
+
+  ```ts title="src/features/products/product-adapter.ts"
+  import { PublishedReviewResponse, ReviewResponse } from "./api/product-api-types";
+  import { Review } from "./product-types";
+
+  const isPublishedReview = (review: ReviewResponse): review is PublishedReviewResponse => "body" in review;
+
+  const toReview = (review: ReviewResponse): Review => {
+    if (isPublishedReview(review)) {
+      return {
+        id: review.id,
+        isRemoved: false,
+        body: review.body,
+        authorName: review.author_name,
+        createdAt: review.created_at,
+      };
+    }
+
+    return {
+      id: review.id,
+      isRemoved: true,
+    };
+  };
+  ```
+
+  O guard pergunta pelo formato **completo** (`isPublishedReview`), e não pelo reduzido. Como o reduzido é um `Pick` do completo, todo item completo também cabe no tipo reduzido. Um guard `review is RemovedReviewResponse` deixaria os dois formatos entrarem no `if`, e o que sobra embaixo viraria `never`.
 
 ### Lei 4: Funções
 
@@ -125,6 +173,7 @@ O fluxo é `tela → hook → service → api → client`, sempre nesse sentido.
 - **L6.1 O teste é "se um mudar, o outro muda junto?".** Se sim, é a mesma coisa e fica num lugar só. Se não, a semelhança é coincidência e os dois ficam separados (como em L3.6). Vale para tipos, componentes e valores.
 - **L6.2 Abstração só aparece com o segundo uso.** Um helper ou componente extraído para um uso só é antecipação.
 - **L6.3 Um valor usado por mais de um consumidor é montado uma vez.** Se dois hooks recebem os mesmos params, a tela monta o objeto uma vez e passa para os dois.
+- **L6.4 Repetição pequena e lado a lado, dentro da mesma função, é aceita quando deixa a leitura linear.** O que a L6.1 evita é uma cópia mudar e a outra ficar para trás, e isso acontece quando as cópias estão longe uma da outra. Duas versões de um objeto, uma logo abaixo da outra na mesma função (como os dois `return` do adapter da L3.11), não têm esse risco: quem mexe numa vê a outra. Separar os campos comuns numa função à parte só para não repetir troca um risco baixo por uma leitura que obriga a pular entre funções. Fora da mesma função, a L6.1 vale normalmente.
 
 ### Lei 7: Performance
 
@@ -161,4 +210,6 @@ O código de cada arquivo está nas notas de [camadas](/mobile/react-native/rede
 
 ## O que mudou entre versões
 
+- **2026-11-22 (revisão 2)**: entrou a troca da versão do cache quando o formato do modelo muda (L2.5).
+- **2026-11-22 (revisão)**: entraram a união para formatos diferentes da mesma entidade (L3.11) e a repetição aceita dentro da mesma função (L6.4).
 - **2026-11-22**: primeira versão. Entraram a duplicação dentro da mesma camada (L3.7), a regra de tipar as fronteiras (L3.9), a proibição de import entre features (L1.4), a regra de props por camada (L5.1) e o critério do shared por domínio (L1.5), que substituiu o teste "funciona em outro app?".
