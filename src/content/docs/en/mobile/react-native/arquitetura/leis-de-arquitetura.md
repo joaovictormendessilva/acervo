@@ -46,7 +46,7 @@ The laws have no automatic exceptions. When a rule seems to get in the way, the 
   - the screen (`src/app/`) brings them together, since it can import from any feature;
   - or what they share moves down to `shared`;
   - or one of them isn't a feature, but part of the other. An entity that only exists inside another (a post's comments, an order's items) stays in the main entity's feature.
-- **L1.5 The shared test is "does this code know what a domain entity is?".** If it does, it belongs to the feature. Shared code **may** depend on app infrastructure (theme, fonts, constants, HTTP client). Being shared doesn't mean it has to work in another app without taking anything along.
+- **L1.5 The shared test is "does this code know what a domain entity is?".** If it does, it belongs to the feature. Shared code **may** depend on app infrastructure (theme, fonts, constants, HTTP client). Being shared doesn't mean it has to work in another app without taking anything along. Routes centralized in shared (a file of route constants and helpers) are navigation infrastructure, even when they build the path to an entity: the helper knows the shape of the URL, not the entity. That's why it takes simple values (`id`, `slug`), never the model.
 - **L1.6 A subfolder only exists when it groups 2 or more files.** A folder with a single file only adds a navigation level.
 - **L1.7 Files in kebab-case, prefixed with the feature:** `<feature>-types.ts`, `<feature>-adapter.ts`, `<feature>-service.ts`, `api/<feature>-api.ts`, `api/<feature>-api-types.ts`. The prefix follows the feature even when the API uses another vocabulary: the file says who it belongs to, and the types inside it say what the API speaks.
 
@@ -118,10 +118,20 @@ The flow is `screen → hook → service → api → client`, always in that dir
   ```
 
   ```ts title="src/features/products/product-types.ts"
-  export type Review = { id: string } & (
-    | { isRemoved: false; body: string; authorName: string; createdAt: string }
-    | { isRemoved: true }
-  );
+  export type PublishedReview = {
+    id: string;
+    isRemoved: false;
+    body: string;
+    authorName: string;
+    createdAt: string;
+  };
+
+  export type RemovedReview = {
+    id: string;
+    isRemoved: true;
+  };
+
+  export type Review = PublishedReview | RemovedReview;
   ```
 
   ```ts title="src/features/products/product-adapter.ts"
@@ -131,24 +141,28 @@ The flow is `screen → hook → service → api → client`, always in that dir
   const isPublishedReview = (review: ReviewResponse): review is PublishedReviewResponse => "body" in review;
 
   const toReview = (review: ReviewResponse): Review => {
-    if (isPublishedReview(review)) {
+    if (!isPublishedReview(review)) {
       return {
         id: review.id,
-        isRemoved: false,
-        body: review.body,
-        authorName: review.author_name,
-        createdAt: review.created_at,
+        isRemoved: true,
       };
     }
 
     return {
       id: review.id,
-      isRemoved: true,
+      isRemoved: false,
+      body: review.body,
+      authorName: review.author_name,
+      createdAt: review.created_at,
     };
   };
   ```
 
+  Each model case gets a name (`PublishedReview`, `RemovedReview`), like the DTOs, and the union sits on a single line at the end. In the adapter, the exception case returns early and the main shape stays in the final `return`.
+
   The guard asks for the **complete** shape (`isPublishedReview`), not the reduced one. Since the reduced one is a `Pick` of the complete one, every complete item also fits the reduced type. A `review is RemovedReviewResponse` guard would let both shapes into the `if`, and what's left below would become `never`.
+
+- **L3.12 A concept has a single name across the model, in every entity.** If the post calls the author `authorName`, the comment does too, not `ownerUsername`. With the same names, a component that serves both entities takes a `Pick` of the model and accepts both, and whoever reads the code doesn't have to figure out whether two names mean the same thing. The API name doesn't matter here: the adapter translates (`owner_username` becomes `authorName` in both).
 
 ### Law 4: Functions
 
@@ -159,6 +173,8 @@ The flow is `screen → hook → service → api → client`, always in that dir
 - **L4.5 Each piece of logic has its place:**
   - formatting for display (relative date, currency) stays in the screen or component;
   - a value derived from the model (reading time, order total) may stay inline while it has a single use, and moves to the adapter when a second one shows up.
+
+- **L4.6 Exception cases leave early with `return`, and what the function really returns stays in the final `return`.** Whoever reads the end of the function sees the main path, and the detours (deleted item, missing data, error) sit at the top, each one handled and out of the way. The L3.11 example follows this shape.
 
 ### Law 5: Components
 
@@ -210,6 +226,8 @@ The code for each file is in the [layers](/en/mobile/react-native/rede/camadas-d
 
 ## What changed between versions
 
+- **2026-11-22 (revision 4)**: added the early exit for exception cases (L4.6).
+- **2026-11-22 (revision 3)**: added a single name per concept in the model (L3.12), and L1.5 now says routes centralized in shared are navigation infrastructure.
 - **2026-11-22 (revision 2)**: added bumping the cache version when the model shape changes (L2.5).
 - **2026-11-22 (revision)**: added the union for different shapes of the same entity (L3.11) and the accepted repetition inside the same function (L6.4).
 - **2026-11-22**: first version. Added duplication within the same layer (L3.7), the type-the-boundaries rule (L3.9), the ban on imports between features (L1.4), the props-by-layer rule (L5.1) and the domain-based shared criterion (L1.5), which replaced the "does it work in another app?" test.

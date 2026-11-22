@@ -46,7 +46,7 @@ As leis não têm exceção automática. Quando uma regra parecer atrapalhar, a 
   - a tela (`src/app/`) junta as duas, porque ela pode importar de qualquer feature;
   - ou o que é comum desce para o `shared`;
   - ou uma delas não é uma feature, e sim parte da outra. Uma entidade que só existe dentro de outra (comentários de um post, itens de um pedido) fica na feature da entidade principal.
-- **L1.5 O teste do shared é "esse código sabe o que é uma entidade do domínio?".** Se sabe, ele é da feature. Um shared **pode** depender da infraestrutura do app (tema, fontes, constantes, client HTTP). Ser shared não exige funcionar em outro app sem levar nada.
+- **L1.5 O teste do shared é "esse código sabe o que é uma entidade do domínio?".** Se sabe, ele é da feature. Um shared **pode** depender da infraestrutura do app (tema, fontes, constantes, client HTTP). Ser shared não exige funcionar em outro app sem levar nada. Rotas centralizadas no shared (um arquivo de constantes e helpers de rota) são infraestrutura de navegação, mesmo quando montam o caminho de uma entidade: o helper conhece a forma da URL, não a entidade. Por isso ele recebe valores simples (`id`, `slug`), nunca o modelo.
 - **L1.6 Subpasta só existe quando agrupa 2 ou mais arquivos.** Uma pasta com um arquivo só cria um nível a mais de navegação.
 - **L1.7 Arquivos em kebab-case, com o prefixo da feature:** `<feature>-types.ts`, `<feature>-adapter.ts`, `<feature>-service.ts`, `api/<feature>-api.ts`, `api/<feature>-api-types.ts`. O prefixo segue a feature mesmo quando a API usa outro vocabulário: o arquivo diz a quem ele pertence, e os tipos dentro dele dizem o que a API fala.
 
@@ -118,10 +118,20 @@ O fluxo é `tela → hook → service → api → client`, sempre nesse sentido.
   ```
 
   ```ts title="src/features/products/product-types.ts"
-  export type Review = { id: string } & (
-    | { isRemoved: false; body: string; authorName: string; createdAt: string }
-    | { isRemoved: true }
-  );
+  export type PublishedReview = {
+    id: string;
+    isRemoved: false;
+    body: string;
+    authorName: string;
+    createdAt: string;
+  };
+
+  export type RemovedReview = {
+    id: string;
+    isRemoved: true;
+  };
+
+  export type Review = PublishedReview | RemovedReview;
   ```
 
   ```ts title="src/features/products/product-adapter.ts"
@@ -131,24 +141,28 @@ O fluxo é `tela → hook → service → api → client`, sempre nesse sentido.
   const isPublishedReview = (review: ReviewResponse): review is PublishedReviewResponse => "body" in review;
 
   const toReview = (review: ReviewResponse): Review => {
-    if (isPublishedReview(review)) {
+    if (!isPublishedReview(review)) {
       return {
         id: review.id,
-        isRemoved: false,
-        body: review.body,
-        authorName: review.author_name,
-        createdAt: review.created_at,
+        isRemoved: true,
       };
     }
 
     return {
       id: review.id,
-      isRemoved: true,
+      isRemoved: false,
+      body: review.body,
+      authorName: review.author_name,
+      createdAt: review.created_at,
     };
   };
   ```
 
+  Cada caso do modelo ganha um nome (`PublishedReview`, `RemovedReview`), como os DTOs, e a união fica numa linha só no fim. No adapter, o caso de exceção sai cedo e o formato principal fica no `return` final.
+
   O guard pergunta pelo formato **completo** (`isPublishedReview`), e não pelo reduzido. Como o reduzido é um `Pick` do completo, todo item completo também cabe no tipo reduzido. Um guard `review is RemovedReviewResponse` deixaria os dois formatos entrarem no `if`, e o que sobra embaixo viraria `never`.
+
+- **L3.12 Um conceito tem um nome só no modelo, em todas as entidades.** Se o post chama o autor de `authorName`, o comentário também chama, e não `ownerUsername`. Com os mesmos nomes, um componente que serve às duas entidades recebe um `Pick` do modelo e aceita as duas, e quem lê o código não precisa descobrir se dois nomes são a mesma coisa. O nome da API não importa aqui: o adapter traduz (`owner_username` vira `authorName` nos dois).
 
 ### Lei 4: Funções
 
@@ -159,6 +173,8 @@ O fluxo é `tela → hook → service → api → client`, sempre nesse sentido.
 - **L4.5 Cada lógica tem o seu lugar:**
   - formatar para exibir (data relativa, moeda) fica na tela ou no componente;
   - um dado derivado do modelo (tempo de leitura, total do pedido) pode ficar inline enquanto tiver um uso só, e vai para o adapter quando aparecer o segundo.
+
+- **L4.6 Casos de exceção saem cedo com `return`, e o que a função realmente devolve fica no `return` final.** Quem lê o fim da função vê o caminho principal, e os desvios (item excluído, dado ausente, erro) ficam no topo, cada um resolvido e fora do caminho. O exemplo da L3.11 segue esse formato.
 
 ### Lei 5: Componentes
 
@@ -210,6 +226,8 @@ O código de cada arquivo está nas notas de [camadas](/mobile/react-native/rede
 
 ## O que mudou entre versões
 
+- **2026-11-22 (revisão 4)**: entrou a saída antecipada dos casos de exceção (L4.6).
+- **2026-11-22 (revisão 3)**: entrou um nome só por conceito no modelo (L3.12), e a L1.5 passou a dizer que rotas centralizadas no shared são infraestrutura de navegação.
 - **2026-11-22 (revisão 2)**: entrou a troca da versão do cache quando o formato do modelo muda (L2.5).
 - **2026-11-22 (revisão)**: entraram a união para formatos diferentes da mesma entidade (L3.11) e a repetição aceita dentro da mesma função (L6.4).
 - **2026-11-22**: primeira versão. Entraram a duplicação dentro da mesma camada (L3.7), a regra de tipar as fronteiras (L3.9), a proibição de import entre features (L1.4), a regra de props por camada (L5.1) e o critério do shared por domínio (L1.5), que substituiu o teste "funciona em outro app?".
