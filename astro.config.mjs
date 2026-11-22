@@ -58,6 +58,11 @@ export default defineConfig({
 									translations: { en: 'Performance' },
 									items: [{ autogenerate: { directory: 'mobile/react-native/performance' } }],
 								},
+								{
+									label: 'Build e distribuição',
+									translations: { en: 'Build and distribution' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/build' } }],
+								},
 							],
 						},
 					],
