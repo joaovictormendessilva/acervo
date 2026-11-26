@@ -39,6 +39,11 @@ export default defineConfig({
 									items: [{ autogenerate: { directory: 'mobile/react-native/estilizacao' } }],
 								},
 								{
+									label: 'Internacionalização',
+									translations: { en: 'Internationalization' },
+									items: [{ autogenerate: { directory: 'mobile/react-native/internacionalizacao' } }],
+								},
+								{
 									label: 'Datas',
 									translations: { en: 'Dates' },
 									items: [{ autogenerate: { directory: 'mobile/react-native/datas' } }],
