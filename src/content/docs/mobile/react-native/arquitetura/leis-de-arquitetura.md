@@ -3,13 +3,14 @@ title: Leis de arquitetura
 description: As regras de organização, camadas, tipos, funções e duplicação que todo app React Native segue, com o porquê de cada uma.
 tecnologia: react-native
 versao_testada: Expo SDK 58 · TypeScript 6.0 · TanStack Query 5
-atualizado_em: 2026-11-22
+atualizado_em: 2026-11-26
 fontes:
   - https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md
   - https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-annotations-on-variables
   - https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator
   - https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
   - https://docs.expo.dev/guides/react-compiler/
+  - https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
 sidebar:
   order: 0
 ---
@@ -83,6 +84,7 @@ O fluxo é `tela → hook → service → api → client`, sempre nesse sentido.
   | Props de componente | `Props` |
 
 - **L3.2 Sempre `type`, sem prefixo `I` ou `T`.** Uma regra só, que cobre também as uniões.
+  - **Exceção prevista: estender a tipagem de uma biblioteca.** Quando a biblioteca pede para completar uma `interface` dela por *module augmentation* (`declare module "i18next" { interface CustomTypeOptions { ... } }`), só `interface` funciona, porque só ela soma campos a uma declaração que já existe. A declaração fica sozinha num arquivo `.d.ts`, e o motivo vai na mensagem do commit.
 - **L3.3 O tipo da resposta da API é fiel a ela:** todos os campos, com os nomes originais. Ele documenta a API dentro do código. Quem enxuga é o adapter.
 - **L3.4 O modelo fala a língua do app:** camelCase e datas como string ISO, para o tipo continuar certo depois de passar por um cache salvo em JSON.
 - **L3.5 O resumo tem os campos que todas as respostas trazem.** O completo estende o resumo, e um campo que só o detalhe tem fica só no completo.
@@ -170,6 +172,7 @@ O código de cada arquivo está nas notas de [camadas](/mobile/react-native/rede
 
 ## O que mudou entre versões
 
+- **2026-11-26 (revisão 5)**: a L3.2 passou a prever a exceção da *module augmentation*, que exige `interface`.
 - **2026-11-22 (revisão 4)**: entrou a saída antecipada dos casos de exceção (L4.6).
 - **2026-11-22 (revisão 3)**: entrou um nome só por conceito no modelo (L3.12), e a L1.5 passou a dizer que rotas centralizadas no shared são infraestrutura de navegação.
 - **2026-11-22 (revisão 2)**: entrou a troca da versão do cache quando o formato do modelo muda (L2.5).

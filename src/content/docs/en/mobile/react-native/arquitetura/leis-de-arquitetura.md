@@ -3,13 +3,14 @@ title: Architecture laws
 description: The organization, layer, type, function and duplication rules every React Native app follows, with the reason for each one.
 tecnologia: react-native
 versao_testada: Expo SDK 58 · TypeScript 6.0 · TanStack Query 5
-atualizado_em: 2026-11-22
+atualizado_em: 2026-11-26
 fontes:
   - https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md
   - https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-annotations-on-variables
   - https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator
   - https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
   - https://docs.expo.dev/guides/react-compiler/
+  - https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
 sidebar:
   order: 0
 ---
@@ -83,6 +84,7 @@ The flow is `screen → hook → service → api → client`, always in that dir
   | Component props | `Props` |
 
 - **L3.2 Always `type`, no `I` or `T` prefix.** One rule, which also covers unions.
+  - **Expected exception: extending a library's types.** When a library asks you to complete one of its `interface`s through *module augmentation* (`declare module "i18next" { interface CustomTypeOptions { ... } }`), only `interface` works, because only it adds fields to an existing declaration. The declaration lives alone in a `.d.ts` file, and the reason goes in the commit message.
 - **L3.3 The API response type is faithful to it:** every field, with the original names. It documents the API inside the code. The adapter is what trims it.
 - **L3.4 The model speaks the app's language:** camelCase and dates as ISO strings, so the type stays correct after going through a cache saved as JSON.
 - **L3.5 The summary holds the fields every response brings.** The complete type extends the summary, and a field only the detail has lives only in the complete type.
@@ -170,6 +172,7 @@ The code for each file is in the [layers](/en/mobile/react-native/rede/camadas-d
 
 ## What changed between versions
 
+- **2026-11-26 (revision 5)**: L3.2 now expects the *module augmentation* exception, which requires `interface`.
 - **2026-11-22 (revision 4)**: added the early exit for exception cases (L4.6).
 - **2026-11-22 (revision 3)**: added a single name per concept in the model (L3.12), and L1.5 now says routes centralized in shared are navigation infrastructure.
 - **2026-11-22 (revision 2)**: added bumping the cache version when the model shape changes (L2.5).

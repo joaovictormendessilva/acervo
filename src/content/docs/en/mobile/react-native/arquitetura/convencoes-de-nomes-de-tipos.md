@@ -3,9 +3,10 @@ title: Type naming conventions
 description: How to name TypeScript types (domain model, summary, API response and parameters, props) and why to use type everywhere.
 tecnologia: typescript
 versao_testada: TypeScript 6.0
-atualizado_em: 2026-11-22
+atualizado_em: 2026-11-26
 fontes:
   - https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces
+  - https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
 sidebar:
   order: 2
 ---
@@ -367,6 +368,8 @@ The real differences are few:
 
 I use **`type` everywhere**: it's a single rule, it covers unions and I never have to stop and think "is this an interface or a type?". The differences above don't show up in a typical app.
 
+The only exception is declaration merging when it is required: some libraries (i18next, for example) ask you to complete one of their `interface`s through *module augmentation* to type your code. With `type` that gives `Duplicate identifier`, so there it is `interface`, in a separate `.d.ts`. It is the expected exception in [L3.2](/en/mobile/react-native/arquitetura/leis-de-arquitetura/).
+
 ### What about "interface for contracts, type for the rest"?
 
 It's a common opinion in videos and posts, but **it's not an official standard**, and the criterion is subjective. Almost everything is a "contract" for something:
@@ -393,4 +396,5 @@ Each person on the team would draw the line somewhere else, and the discussion w
 
 ## What changed between versions
 
+- **2026-11-26**: added the *module augmentation* exception, aligned with L3.2.
 - **TypeScript 4.2**: `type` names started showing up in error messages. Before that, errors sometimes showed the expanded type instead of the name, which was an old advantage of `interface`.

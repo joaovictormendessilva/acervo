@@ -3,9 +3,10 @@ title: Convenções de nomes de tipos
 description: Como nomear tipos no TypeScript (modelo do domínio, resumo, resposta e parâmetros da API, props) e por que usar type em tudo.
 tecnologia: typescript
 versao_testada: TypeScript 6.0
-atualizado_em: 2026-11-22
+atualizado_em: 2026-11-26
 fontes:
   - https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces
+  - https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
 sidebar:
   order: 2
 ---
@@ -367,6 +368,8 @@ As diferenças reais são poucas:
 
 Eu uso **`type` em tudo**: é uma regra só, ela cobre as uniões e eu nunca preciso parar para pensar "isso é interface ou type?". As diferenças acima não aparecem num app comum.
 
+A única exceção é a mesclagem de declarações quando ela é obrigatória: algumas bibliotecas (o i18next, por exemplo) pedem que você complete uma `interface` delas com *module augmentation* para tipar o seu código. Com `type` isso dá `Duplicate identifier`, então ali vai `interface`, num `.d.ts` separado. É a exceção prevista na [L3.2](/mobile/react-native/arquitetura/leis-de-arquitetura/).
+
 ### E a regra "interface para contratos, type para o resto"?
 
 É uma opinião comum em vídeos e posts, mas **não é um padrão oficial**, e o critério é subjetivo. Quase tudo é "contrato" de alguma coisa:
@@ -393,4 +396,5 @@ Cada pessoa do time traçaria a linha num lugar diferente, e a discussão iria p
 
 ## O que mudou entre versões
 
+- **2026-11-26**: entrou a exceção da *module augmentation*, alinhada com a L3.2.
 - **TypeScript 4.2**: os nomes de `type` passaram a aparecer nas mensagens de erro. Antes, às vezes o erro mostrava o tipo expandido no lugar do nome, e essa era uma vantagem antiga de `interface`.
