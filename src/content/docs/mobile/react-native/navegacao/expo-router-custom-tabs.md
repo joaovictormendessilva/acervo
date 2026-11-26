@@ -3,7 +3,7 @@ title: Expo Router — custom tabs
 description: Barra de abas própria com Tabs, TabSlot, TabList e TabTrigger do expo-router/ui.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58 · React Native 0.88
-atualizado_em: 2026-11-21
+atualizado_em: 2026-11-26
 fontes:
   - https://docs.expo.dev/router/advanced/custom-tabs/
   - https://docs.expo.dev/router/basics/redirects/
@@ -240,7 +240,9 @@ Sem nenhum dos dois, `/` não corresponde a nenhuma tela e o app abre na tela de
 
 Para não espalhar strings de rota pelo app, centralize as rotas numa constante. O `satisfies Record<string, Href>` confere cada valor contra as rotas que o `typedRoutes` gera. Se um arquivo de rota for renomeado ou apagado, o `tsc` acusa o erro aqui.
 
-```ts title="src/constants/routes.ts"
+A constante fica em `src/shared/constants/`, como na [Estrutura de pastas](/mobile/react-native/arquitetura/estrutura-de-pastas/).
+
+```ts title="src/shared/constants/routes.ts"
 import type { Href } from 'expo-router';
 
 export const routes = {
@@ -275,5 +277,6 @@ Com `style={{ display: 'none' }}` no `TabList`, a lista só registra as abas. Fo
 
 ## O que mudou entre versões
 
+- **2026-11-26**: a constante de rotas passou de `src/constants/routes.ts` para `src/shared/constants/routes.ts`, para seguir a Estrutura de pastas.
 - **SDK 52 e anteriores (React 18)**: o botão customizado precisava de `forwardRef` para receber o `ref`. A partir do React 19, o `ref` chega como prop comum.
 - **React Native 0.88**: o `View` virou componente de função e o `ref` de `TabTriggerSlotProps` passou a dar erro de tipo com o `Pressable`. Por isso o botão é tipado com `ComponentProps<typeof Pressable>`.

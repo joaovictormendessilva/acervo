@@ -3,7 +3,7 @@ title: Expo Router — installation and first route
 description: Migrating an Expo app from App.tsx to Expo Router with routes in src/app.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58
-atualizado_em: 2026-11-05
+atualizado_em: 2026-11-26
 fontes:
   - https://docs.expo.dev/router/introduction/
   - https://docs.expo.dev/router/installation/
@@ -26,13 +26,15 @@ sidebar:
 ### 1. Install the dependencies
 
 ```bash
-npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar
+npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar react-dom
 ```
+
+`react-dom` goes in even for a mobile-only app. `expo-router` brings web dependencies that list `react-dom` as a *peer dependency*. Without it in the project, npm tries the latest `react-dom`, which requires a newer React than the SDK one, and the next `npm install` fails with `ERESOLVE`. Installing it with `npx expo install` keeps it on the SDK version.
 
 To also run on the web:
 
 ```bash
-npx expo install react-dom react-native-web
+npx expo install react-native-web
 ```
 
 ### 2. Change the entry point
@@ -143,11 +145,16 @@ src/
 ## Common pitfalls
 
 - **Forgetting to change `main`**: the app keeps opening the old `App.tsx`, or breaks if it was deleted.
-- **Putting components and hooks inside `src/app/`**: every file there becomes a route. Use `src/components/`, `src/hooks/` etc.
+- **Putting components and hooks inside `src/app/`**: every file there becomes a route. Use `src/shared/` or `src/features/`, as in [Folder structure](/en/mobile/react-native/arquitetura/estrutura-de-pastas/).
 - **Installing with `npm install`**: use `npx expo install` to get SDK-compatible versions.
+- **`ERESOLVE` involving `react-dom` and `react`** on the first `npm install` after Expo Router (for example, `react-dom@19.3.1` asking for `react@^19.3.1` in a project with `react@19.3.0`): `react-dom` is missing from the project. Run `npx expo install react-dom`.
 
 ## Next steps
 
 - Dynamic routes (`[id].tsx`) and `useLocalSearchParams`
 - Navigation with `Link` and `router`
 - Tabs and `(tabs)` route groups
+
+## What changed between versions
+
+- **2026-11-26**: `react-dom` is now installed in step 1, even without web, to avoid the npm `ERESOLVE`. Components and hooks now point to `src/shared/` and `src/features/`.

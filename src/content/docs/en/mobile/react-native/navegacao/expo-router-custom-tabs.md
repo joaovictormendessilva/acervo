@@ -3,7 +3,7 @@ title: Expo Router — custom tabs
 description: Your own tab bar with Tabs, TabSlot, TabList and TabTrigger from expo-router/ui.
 tecnologia: expo-router
 versao_testada: Expo SDK 58 · expo-router 58 · React Native 0.88
-atualizado_em: 2026-11-21
+atualizado_em: 2026-11-26
 fontes:
   - https://docs.expo.dev/router/advanced/custom-tabs/
   - https://docs.expo.dev/router/basics/redirects/
@@ -240,7 +240,9 @@ Without either one, `/` matches no screen and the app opens on the route-not-fou
 
 To avoid scattering route strings across the app, centralize them in a constant. `satisfies Record<string, Href>` checks each value against the routes that `typedRoutes` generates. If a route file is renamed or deleted, `tsc` reports the error here.
 
-```ts title="src/constants/routes.ts"
+The constant lives in `src/shared/constants/`, as in [Folder structure](/en/mobile/react-native/arquitetura/estrutura-de-pastas/).
+
+```ts title="src/shared/constants/routes.ts"
 import type { Href } from 'expo-router';
 
 export const routes = {
@@ -275,5 +277,6 @@ With `style={{ display: 'none' }}` on `TabList`, the list only registers the tab
 
 ## What changed between versions
 
+- **2026-11-26**: the routes constant moved from `src/constants/routes.ts` to `src/shared/constants/routes.ts`, to follow the Folder structure.
 - **SDK 52 and earlier (React 18)**: the custom button needed `forwardRef` to receive the `ref`. From React 19 on, `ref` arrives as a regular prop.
 - **React Native 0.88**: `View` became a function component, and the `ref` in `TabTriggerSlotProps` started failing type checks against `Pressable`. That's why the button is typed with `ComponentProps<typeof Pressable>`.
